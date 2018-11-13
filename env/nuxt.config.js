@@ -25,6 +25,8 @@ module.exports = {
     base: '/'
   },
 
+  serverMiddleware: ['~/api/getList'],
+
   plugins: [{ src: '@/plugins/intersectionObserver' }],
 
   vendor: ['default-passive-events'],
@@ -36,6 +38,7 @@ module.exports = {
     '@/modules/svg',
     '@/modules/webp',
     '@/modules/image',
+    '@nuxtjs/axios',
     [
       'nuxt-i18n',
       {
@@ -97,6 +100,31 @@ module.exports = {
       }
     ]
   ],
+
+  axios: {
+    proxy: true,
+    retry: { retries: 3 },
+    debug: true
+  },
+
+  proxy: {
+    '/movies/': {
+      target: 'https://www.kinos.to/Kino-filme.html',
+      pathRewrite: { '^/movies/': '' }
+    },
+    '/Stream/': {
+      target: 'https://www.kinos.to/Stream/',
+      pathRewrite: { '^/Stream/': '' }
+    },
+    '/mirror/': {
+      target: 'https://www.kinos.to/aGET/Mirror/',
+      pathRewrite: { '^/mirror/': '' }
+    },
+    '/list/': {
+      target: 'https://www.kinos.to/aGET/List/',
+      pathRewrite: { '^/list/': '' }
+    }
+  },
 
   head: {
     meta: [],

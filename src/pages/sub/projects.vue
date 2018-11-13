@@ -17,12 +17,13 @@
     hello2 huhu234 {{ $t('configxyz') }}
     {{ $t('test') }}
     <br>
-
+    <infinity-scroll-list/>
   </div>
 </template>
 
 <script>
 import Headline from '~/components/atoms/Headline';
+import InfinityScrollList from '@/components/molecules/InfinityScrollList';
 
 export default {
   nuxtI18n: {
@@ -32,7 +33,8 @@ export default {
     }
   },
   components: {
-    headline: Headline
+    Headline,
+    InfinityScrollList
   },
 
   head () {
