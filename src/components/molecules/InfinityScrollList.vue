@@ -1,5 +1,8 @@
 <template>
   <ul>
+    <iframe
+      ref="iframe"
+      sandbox="allow-scripts"/>
     <list-item
       v-for="(item, key) in items"
       :key="key"
@@ -33,6 +36,7 @@ export default {
   },
 
   mounted() {
+
     this.getMovies().then((movies) => {
       console.log(movies);
       this.items = movies;
@@ -43,9 +47,10 @@ export default {
   methods: {
     onOpen(value) {
       this.getVideoUrls(value)
-      .then((urls) => {
-        console.log(urls);
-      });
+        .then((urls) => {
+          this.$refs.iframe.src = urls[0][0];
+          console.log(urls);
+        });
     },
 
     reposition() {

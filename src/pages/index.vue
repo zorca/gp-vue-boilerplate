@@ -18,7 +18,7 @@
 
 <script>
 export default {
-  head () {
+  head() {
     return {
       title: 'title of page'
     };
