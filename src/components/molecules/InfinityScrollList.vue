@@ -22,6 +22,7 @@
 <script>
 import ListItem from '@/components/molecules/ListItem';
 import Preview from '@/components/atoms/Preview';
+import { generateStream } from '@/utils/streamGenerator';
 
 export default {
   components: {
@@ -37,10 +38,10 @@ export default {
 
   mounted() {
 
-    this.getMovies().then((movies) => {
-      console.log(movies);
-      this.items = movies;
-    });
+    // this.getMovies().then((movies) => {
+    //   console.log(movies);
+    //   this.items = movies;
+    // });
     this.getMoviesByGenre();
   },
 
@@ -65,14 +66,30 @@ export default {
         });
     },
 
-    getMoviesByGenre() {
+    async getMoviesByGenre() {
       // https://www.kinos.to/aGET/List/?sEcho=2&iColumns=7&sColumns=&iDisplayStart=0&iDisplayLength=25&iSortingCols=1&iSortCol_0=2&sSortDir_0=asc&bSortable_0=true&bSortable_1=true&bSortable_2=true&bSortable_3=false&bSortable_4=false&bSortable_5=false&bSortable_6=true&additional={"fType":"movie","Length":60,"fLetter":"B"}
       // https://www.kinos.to/aGET/List/?sEcho=3&iColumns=7&sColumns=&iDisplayStart=25&iDisplayLength=25&iSortingCols=1&iSortCol_0=2&sSortDir_0=asc&bSortable_0=true&bSortable_1=true&bSortable_2=true&bSortable_3=false&bSortable_4=false&bSortable_5=false&bSortable_6=true&additional={"fType":"movie","Length":60,"fLetter":"B"}
       //
-      return this.$axios.$get('list/?sEcho=2&iColumns=7&sColumns=&iDisplayStart=87&iDisplayLength=25&iSortingCols=1&iSortCol_0=2&sSortDir_0=asc&bSortable_0=true&bSortable_1=true&bSortable_2=true&bSortable_3=false&bSortable_4=false&bSortable_5=false&bSortable_6=true&additional={"fType":"movie","Length":60,"fLetter":"B"}')
-        .then((result) => {
-          console.log(result);
-        });
+      // return this.$axios.$get('list/?sEcho=2&iColumns=7&sColumns=&iDisplayStart=0&iDisplayLength=25&iSortingCols=1&iSortCol_0=2&sSortDir_0=asc&bSortable_0=true&bSortable_1=true&bSortable_2=true&bSortable_3=false&bSortable_4=false&bSortable_5=false&bSortable_6=true&additional={"fType":"movie","Length":60,"fLetter":"B"}')
+      //   .then((result) => {
+      //     console.log(result);
+      //   });
+
+      const iterator = generateStream((iDisplayStart) => {
+        let url = `list/?sEcho=2&iColumns=7&sColumns=&iDisplayStart=${iDisplayStart * 25}&iDisplayLength=25&iSortingCols=1&iSortCol_0=2&sSortDir_0=asc&bSortable_0=true&bSortable_1=true&bSortable_2=true&bSortable_3=false&bSortable_4=false&bSortable_5=false&bSortable_6=true&additional={"fType":"movie","Length":60,"fLetter":"Q"}`;
+        return this.$axios.$get(url)
+          .then((result) => {
+            return result.aaData;
+          });
+      });
+
+      for await (const data of iterator) {
+        console.log(data);
+      }
+      console.log('TEST1', iterator.next().then((result) => { console.log(result); }));
+      // console.log('TEST2', iterator.next().then((result) => { console.log(result); }));
+      // console.log('TEST3', iterator.next().then((result) => { console.log(result); }));
+
     },
 
     collectPreviewConfig(item) {
