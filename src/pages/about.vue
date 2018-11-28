@@ -63,13 +63,13 @@ export default {
     Headline
   },
 
-  head () {
+  head() {
     return {
       title: 'title of page'
     };
   },
 
-  data () {
+  data() {
     return {
       msg: 'I will change'
     };
@@ -77,7 +77,7 @@ export default {
 
   methods: {
     passing(value) {
-      console.log('AHA', value.intersection.y, value.intersectionRatio);
+      console.log('AHA', value, value.intersection.y, value.intersectionRatio);
     },
 
     enter() {

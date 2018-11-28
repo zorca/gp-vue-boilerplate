@@ -36,12 +36,14 @@
     <picture-comp
       :sources="$t('sources')"
       alt="image description"/>
+    <image3d src="/jpeg3d/sample02.jpg"/>
   </div>
 </template>
 
 <script>
 import Headline from '~/components/atoms/Headline';
 import PictureComp from '~/components/atoms/Picture';
+import Image3d from '~/components/molecules/Image3d';
 
 
 export default {
@@ -53,7 +55,8 @@ export default {
   },
   components: {
     Headline,
-    PictureComp
+    PictureComp,
+    Image3d
   },
   data() {
     return {
@@ -61,7 +64,7 @@ export default {
     };
   },
 
-  head () {
+  head() {
     return {
       title: 'title of page'
     };

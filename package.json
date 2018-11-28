@@ -29,6 +29,7 @@
     "@kazupon/vue-i18n-loader": "^0.3.0",
     "@mapbox/stylelint-processor-arbitrary-tags": "^0.2.0",
     "babel-eslint": "^10.0.1",
+    "babel-plugin-transform-modern-regexp": "0.0.6",
     "babel-preset-vue-app": "^2.0.0",
     "branch-name-lint": "^1.0.5",
     "chai": "^4.2.0",

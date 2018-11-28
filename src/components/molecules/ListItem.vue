@@ -4,7 +4,7 @@
     @enter="enter"
     @leave="leave"
     @passing="passing">
-    <li :style="transform">
+    <li >
       <slot/>
     </li>
   </intersect>
@@ -26,12 +26,12 @@ export default {
   },
 
   watch: {
-    position: {
-      handler(value) {
-        this.transform = `transform: translate(0, ${value * 3}em);`;
-      },
-      immediate: true
-    }
+    // position: {
+    //   handler(value) {
+    //     this.transform = `transform: translate(0, ${value * 3}em);`;
+    //   },
+    //   immediate: true
+    // }
   },
 
   mounted() {

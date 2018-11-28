@@ -19,6 +19,7 @@
     ],
     "prettier.eslintIntegration": true,
     "prettier.stylelintIntegration": true,
+    "vetur.format.defaultFormatter.js": "vscode-typescript",
     "files.exclude": {
       ".nuxt/": true,
       ".scannerwork/": true,
@@ -33,7 +34,7 @@
       "**/logs": true,
       "**/*.log": true,
       "**/.DS_Store": true,
-      ".*": true
+      ".*": false
     },
     "files.associations": {
       ".branchlintrc": "json",

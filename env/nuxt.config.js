@@ -132,7 +132,7 @@ module.exports = {
     script: [
       {
         src:
-          'https://cdn.polyfill.io/v2/polyfill.min.js?features=HTMLPictureElement',
+          'https://cdn.polyfill.io/v2/polyfill.min.js?features=HTMLPictureElement,IntersectionObserver,IntersectionObserverEntry',
         defer: true
       },
       {

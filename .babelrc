@@ -8,5 +8,6 @@
         "debug": true
       }
     ]
-  ]
+  ],
+  "plugins": ["transform-modern-regexp"]
 }
