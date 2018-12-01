@@ -2,57 +2,19 @@
   <intersect
     :threshold="[0]"
     :root-margin="margin"
-    @enter="enter"
     @leave="leave">
     <li :style="transform">
-      <a
-        :href="url"
-        @click="onClick">
-        <h3>{{ title }}</h3>
-        <p>{{ description }}</p>
-        <img
-          :src="img"
-          class="poster"
-          @load="onImageLoad">
-        <img
-          :src="lang"
-          class="lang">
-        <span>{{ imdb }}</span>
-      </a>
+      <slot/>
     </li>
   </intersect>
 </template>
 
 <script>
 
-import { subscribeOnce } from '../../service/animationFrame';
+import { subscribeOnce } from '../../../service/animationFrame';
 
 export default {
   props: {
-    title: {
-      type: String,
-      default: ''
-    },
-    description: {
-      type: String,
-      default: ''
-    },
-    url: {
-      type: String,
-      default: ''
-    },
-    img: {
-      type: String,
-      default: ''
-    },
-    lang: {
-      type: String,
-      default: ''
-    },
-    imdb: {
-      type: String,
-      default: ''
-    },
     onMounted: {
       type: Function,
       default() { }
@@ -90,23 +52,11 @@ export default {
   },
 
   mounted() {
-    this.updateSize();
+    console.log('AJA');
+    setTimeout(this.updateSize, 1000);
   },
 
   methods: {
-    onImageLoad() {
-      this.updateSize();
-    },
-
-    onClick(e) {
-      e.preventDefault();
-      this.$emit('open', this.url);
-    },
-
-    enter() {
-      // console.log('ENTER', e);
-    },
-
     leave(e) {
       this.updateStep(e);
       this.updateElement();
@@ -127,6 +77,7 @@ export default {
     updateElement() {
       let x = this.range.x * this.size.x * this.step.x;
       let y = this.range.y * this.size.y * this.step.y;
+      console.log('LEAVE', this.range.y, this.size.y, this.step.y);
       subscribeOnce(() => {
         this.$el.style.transform = getTransform(x, y);
       });
@@ -134,6 +85,7 @@ export default {
 
     updateSize() {
       let bounds = this.$el.getBoundingClientRect();
+      console.log(bounds);
       this.size.x = bounds.width;
       this.size.y = bounds.height;
       this.margin = `${this.size.y * this.offset.y}px ${this.size.x * this.offset.x}px`;
@@ -153,44 +105,10 @@ function getTransform(x = 0, y = 0) {
 li {
   display: block;
   width: 20%;
+  height: 30%;
 
   &.tile {
     float: left;
-  }
-
-  & a {
-    display: block;
-
-    & h3 {
-      position: absolute;
-      top: 0;
-      width: 100%;
-    }
-
-    & p {
-      position: absolute;
-      bottom: 0;
-      display: none;
-      height: 3em;
-      overflow: hidden;
-    }
-
-    & .poster {
-      display: block;
-      width: 100%;
-    }
-
-    & .lang {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-    }
-
-    & span {
-      position: absolute;
-      right: 0;
-      bottom: 0;
-    }
   }
 }
 </style>

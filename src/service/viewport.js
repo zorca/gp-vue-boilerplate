@@ -26,10 +26,7 @@ const observer = fromEvent(global, 'resize').pipe(
 );
 
 function updateViewportSize() {
-  // console.log(e);
   x = w.innerWidth || e.clientWidth || g.clientWidth;
   y = w.innerHeight || e.clientHeight || g.clientHeight;
   return { x: x, y: y };
 }
-// console.log(global);
-// fromEvent(global, 'load').subscribe(updateViewportSize);

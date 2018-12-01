@@ -4,7 +4,7 @@
       ref="iframe"
       sandbox="allow-scripts"/> -->
     <preview
-      v-for="(item, key) in items"
+      v-for="(item, key) in itemsInit"
       :key="key"
       :title="item.title"
       :description="item.description"
@@ -16,22 +16,26 @@
       :on-mounted="item.onMounted"
       :offset="offset"
       :position="key"
+      class="tile"
       @open="onOpen"/>
   </ul>
 </template>
 
 <script>
 import Preview from '@/components/atoms/Preview';
+import Item from '@/components/molecules/infinityScrollList/Item';
 import { getViewport } from '../../service/viewport';
 import { getMovieSourceUrls, getMoviesBy } from '@/service/kinox';
 
 export default {
   components: {
-    Preview
+    Preview,
+    Item
   },
 
   data() {
     return {
+      itemsInit: [],
       items: [],
       range: {
         x: 0,
@@ -73,13 +77,14 @@ export default {
         let item = result.value.slice(0, 1);
         item[0].onMounted = (size) => {
           let viewport = getViewport();
-          let numX = Math.floor(viewport.x / size.x);
+          let numX = Math.ceil(viewport.x / size.x);
           let numY = Math.ceil(viewport.y / size.y);
           let numItems = numX * numY;
-          this.items = result.value.slice(0, numItems + (numX * this.offset.y * 2));
-          this.range.y = Math.ceil(this.items.length / Math.ceil(viewport.x / size.x));
+          this.itemsInit = result.value.slice(0, numItems + (numX * this.offset.y * 2));
+          this.range.x = Math.ceil(this.itemsInit.length / numY);
+          this.range.y = Math.ceil(this.itemsInit.length / numX);
         };
-        this.items = item;
+        this.itemsInit = item;
       });
       // console.log('TEST2', iterator.next().then((result) => { console.log(result); }));
       // console.log('TEST3', iterator.next().then((result) => { console.log(result); }));

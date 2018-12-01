@@ -21,15 +21,6 @@ export const measure = measureSubject;
 
 export function subscribeOnce(renderFn, measureFn, renderPipes = []) {
   return subscribe(renderFn, measureFn, renderPipes.concat([first()]));
-  // return subject
-  //   .pipe(
-  //     first(),
-  //     ...renderPipes
-  //   )
-  //   .subscribe(time => {
-  //     renderFn(time);
-  //     measureSubject.pipe(first()).subscribe(measureFn);
-  //   });
 }
 
 export function subscribe(renderFn, measureFn, renderPipes = []) {
