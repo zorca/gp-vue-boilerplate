@@ -1,5 +1,5 @@
 import { fromEvent, timer } from 'rxjs';
-import { map, debounce } from 'rxjs/operators';
+import { map, debounce, share } from 'rxjs/operators';
 
 const w = global || {};
 const d = w.document || {};
@@ -11,10 +11,10 @@ if (e) {
 
 export let x = 0;
 export let y = 0;
-export function subscribeToViewport(fn) {
-  observer.subscribe(value => fn(value));
+export function subscribeToViewport (fn) {
+  return observer.subscribe(value => fn(value));
 }
-export function getViewport() {
+export function getViewport () {
   return updateViewportSize();
 }
 
@@ -22,10 +22,11 @@ const observer = fromEvent(global, 'resize').pipe(
   debounce(() => timer(350)),
   map(() => {
     return updateViewportSize();
-  })
+  }),
+  share()
 );
 
-function updateViewportSize() {
+function updateViewportSize () {
   x = w.innerWidth || e.clientWidth || g.clientWidth;
   y = w.innerHeight || e.clientHeight || g.clientHeight;
   return { x: x, y: y };

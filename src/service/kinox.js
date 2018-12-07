@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { generateStream } from '@/utils/streamGenerator';
 
-export function getMovies() {
+export function getMovies () {
   return doGetRequest('movies/', {}).then(result => {
     return getNodesFromHTMLStringBySelector(
       result,
@@ -10,30 +10,29 @@ export function getMovies() {
   });
 }
 
-export function getMoviesBy() {
-  return generateStream(iDisplayStart => {
-    let num = 100;
-    let url = `list/?iDisplayStart=0&iDisplayLength=10&Page=${iDisplayStart}&Per_Page=${num}&per_page=${num}&ListMode=cover&additional={"fType":"movie","Length":${num},"fLetter":"A"}`;
+export function getMoviesBy (options) {
+  return generateStream((i, options) => {
+    let url = `list/?iDisplayStart=0&iDisplayLength=10&Page=${i + 1}&Per_Page=${options.length}&per_page=${options.length}&ListMode=cover&additional={"fType":"movie","Length":${options.length},"fLetter":"Q"}`;
     return doGetRequest(url).then(result => {
       return getNodesFromHTMLStringBySelector(
         result.Content,
         'div[onclick]'
       ).map(item => collectPreviewConfig(item));
     });
-  });
+  }, options);
 }
 
-export function getMovieSourceUrls(url) {
+export function getMovieSourceUrls (url) {
   return getHoster(url).then(hoster => getStreamsByHoster(hoster));
 }
 
-function getHoster(url) {
+function getHoster (url) {
   return doGetRequest(url, {}).then(result => {
     return getNodesFromHTMLStringBySelector(result, 'ul#HosterList li');
   });
 }
 
-function getStreamsByHoster(hoster) {
+function getStreamsByHoster (hoster) {
   return Promise.all(
     hoster.map(host => {
       return getMirrorStreams(
@@ -44,11 +43,11 @@ function getStreamsByHoster(hoster) {
   );
 }
 
-function getMaxMirrorsByHost(host) {
+function getMaxMirrorsByHost (host) {
   return host.querySelector('div.Data').outerText.match(/\d+\/(\d)+/)[1];
 }
 
-function getMirrorStreams(defaultUrl, max) {
+function getMirrorStreams (defaultUrl, max) {
   return Promise.all(
     new Array(Number(max)).fill({}).map((value, index) => {
       return getStream(`${defaultUrl}&Mirror=${index}`);
@@ -56,44 +55,44 @@ function getMirrorStreams(defaultUrl, max) {
   );
 }
 
-function getStream(url) {
+function getStream (url) {
   return doGetRequest(`mirror/${url}`, {}).then(result => {
     return result.Stream.match(/src\s*=\s*"(.+?)"/)[1];
   });
 }
 
-function doGetRequest(url, options = {}) {
+function doGetRequest (url, options = {}) {
   return axios.get(url, options).then(result => {
     return result.data;
   });
 }
 
-function collectPreviewConfig(item) {
+function collectPreviewConfig (item) {
   return {
     title: item.querySelector('.Headlne > a').attributes.title.value,
     description: item.querySelector('.Descriptor').innerText,
     preview: `https://www.kinos.to${
       item.querySelector('.Thumb > img').dataset.src
-    }`,
+      }`,
     url: item.querySelector('.Headlne > a').dataset.href,
     lang: `https://www.kinos.to${
       item.querySelector('.Genre > div:first-child > img').dataset.src
-    }`,
+      }`,
     imdb: item
       .querySelector('.Genre > div:nth-of-type(3)')
       .innerText.match(/([.\d]+?[\s/]+\d+)$/)[0]
   };
 }
 
-function getNodesFromHTMLStringBySelector(result, selector) {
+function getNodesFromHTMLStringBySelector (result, selector) {
   return [...createHTMLFragment(result).querySelectorAll(selector)];
 }
 
-function createHTMLFragment(html) {
+function createHTMLFragment (html) {
   return document.createRange().createContextualFragment(cleanHTML(html));
 }
 
-function cleanHTML(html) {
+function cleanHTML (html) {
   return html
     .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
     .replace(/(src|href)=/gi, 'data-$1=');

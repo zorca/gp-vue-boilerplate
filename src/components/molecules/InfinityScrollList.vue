@@ -2,22 +2,24 @@
   <ul>
     <!-- <iframe
       ref="iframe"
-      sandbox="allow-scripts"/> -->
-    <preview
+    sandbox="allow-scripts"/>-->
+    <item
       v-for="(item, key) in itemsInit"
       :key="key"
-      :title="item.title"
-      :description="item.description"
-      :url="item.url"
-      :img="item.preview"
-      :lang="item.lang"
-      :imdb="item.imdb"
-      :range="range"
-      :on-mounted="item.onMounted"
-      :offset="offset"
       :position="key"
+      :master="item.master"
+      :range="range"
+      :offset="offset"
+      :items="items"
       class="tile"
-      @open="onOpen"/>
+    >
+      <template slot-scope="slotProps">
+        <preview
+          :config="slotProps.config"
+          @open="onOpen"
+        />
+      </template>
+    </item>
   </ul>
 </template>
 
@@ -26,14 +28,14 @@ import Preview from '@/components/atoms/Preview';
 import Item from '@/components/molecules/infinityScrollList/Item';
 import { getViewport } from '../../service/viewport';
 import { getMovieSourceUrls, getMoviesBy } from '@/service/kinox';
-
+let count = 20;
 export default {
   components: {
     Preview,
     Item
   },
 
-  data() {
+  data () {
     return {
       itemsInit: [],
       items: [],
@@ -42,56 +44,106 @@ export default {
         y: 0
       },
       offset: {
-        x: 2,
-        y: 2
+        x: 5,
+        y: 5
       }
     };
   },
 
-  mounted() {
-    // getMovies().then((movies) => {
-    //   console.log(movies);
-    //   this.items = movies;
-    // });
+  mounted () {
+    this.$on('load', this.onLoad);
+    this.$on('resize', this.onResize);
+    this.$on('next', this.onNext);
     this.getMoviesByGenre();
   },
 
   methods: {
-    onOpen(value) {
+    onLoad (tileSize) {
+      let maxElementsOnAxis = this.getMaxElementsInViewport(tileSize);
+      this.range = this.getRangeOfElementsByAxis(maxElementsOnAxis);
+      // console.log(tileSize, getViewport());
+      // let numOffsetTiles = getNumOffsetTilesByViewportWidth(tileSize, maxElementsOnAxis);
+
+      let maxElements = (maxElementsOnAxis.x * maxElementsOnAxis.y) + (maxElementsOnAxis.x * this.offset.y * 2);
+      this.createElements(maxElements);
+    },
+
+    onResize (size) {
+      let maxElementsOnAxis = this.getMaxElementsInViewport(size);
+      this.range = this.getRangeOfElementsByAxis(maxElementsOnAxis);
+
+      let maxElements = (maxElementsOnAxis.x * maxElementsOnAxis.y) + (maxElementsOnAxis.x * this.offset.y * 2);
+      // this.createElements(maxElements);
+      this.onNext({ x: 0, y: 0 }).then(() => {
+        // this.items[0].master = true;
+        this.itemsInit = this.items.slice(0, maxElements);
+      });
+    },
+
+    onNext (step) {
+      let offset = (this.range.x * this.range.y * 3) + (this.range.x * this.range.y * step.y);
+      if (offset > this.items.length) {
+        count++;
+        console.log('REQUESTED LENGTH', count);
+        return this.iterator.next({ length: count }).then(({ value = [], done }) => {
+          console.log('RESPONSE LENGTH', value.length);
+          this.items = this.items.concat(value);
+          if (!done) {
+            this.onNext(step);
+          }
+        });
+      } else {
+        return Promise.resolve([]);
+      }
+    },
+
+    onOpen (value) {
       getMovieSourceUrls(value)
         .then((urls) => {
-          this.$refs.iframe.src = urls[0][0];
           console.log(urls);
+          this.$refs.iframe.src = urls[0][0];
+
         });
     },
 
-    getMoviesByGenre() {
-      // https://www.kinos.to/aGET/List/?sEcho=2&iColumns=7&sColumns=&iDisplayStart=0&iDisplayLength=25&iSortingCols=1&iSortCol_0=2&sSortDir_0=asc&bSortable_0=true&bSortable_1=true&bSortable_2=true&bSortable_3=false&bSortable_4=false&bSortable_5=false&bSortable_6=true&additional={"fType":"movie","Length":60,"fLetter":"B"}
-      // https://www.kinos.to/aGET/List/?sEcho=3&iColumns=7&sColumns=&iDisplayStart=25&iDisplayLength=25&iSortingCols=1&iSortCol_0=2&sSortDir_0=asc&bSortable_0=true&bSortable_1=true&bSortable_2=true&bSortable_3=false&bSortable_4=false&bSortable_5=false&bSortable_6=true&additional={"fType":"movie","Length":60,"fLetter":"B"}
-
-      const iterator = getMoviesBy();
-      // for await (const data of iterator) {
-      //   console.log(data);
-      // }
-      iterator.next().then((result) => {
-        let item = result.value.slice(0, 1);
-        item[0].onMounted = (size) => {
-          let viewport = getViewport();
-          let numX = Math.ceil(viewport.x / size.x);
-          let numY = Math.ceil(viewport.y / size.y);
-          let numItems = numX * numY;
-          this.itemsInit = result.value.slice(0, numItems + (numX * this.offset.y * 2));
-          this.range.x = Math.ceil(this.itemsInit.length / numY);
-          this.range.y = Math.ceil(this.itemsInit.length / numX);
-        };
-        this.itemsInit = item;
+    createElements (num) {
+      this.itemsInit = [{ master: true }, ...new Array(num - 1).fill({})];
+      this.$off('load', this.onLoad);
+      console.log(this.itemsInit);
+      this.onNext({ x: 0, y: 0 }).then(() => {
+        // this.items[0].master = true;
+        // this.itemsInit = this.items.slice(0, num);
       });
-      // console.log('TEST2', iterator.next().then((result) => { console.log(result); }));
-      // console.log('TEST3', iterator.next().then((result) => { console.log(result); }));
+    },
 
+    getMoviesByGenre () {
+      this.iterator = getMoviesBy({ length: count });
+      let item = { master: true };
+      this.itemsInit = [item];
+    },
+
+    getRangeOfElementsByAxis (maxElementsInViewport) {
+      return {
+        x: maxElementsInViewport.x,
+        y: maxElementsInViewport.y + this.offset.y * 2
+      };
+    },
+
+    getMaxElementsInViewport (size) {
+      let viewport = getViewport();
+      return {
+        x: Math.floor(viewport.x / size.x),
+        y: Math.ceil(viewport.y / size.y)
+      };
     }
   }
 };
+
+// function getNumOffsetTilesByViewportWidth (tileSize, maxElements) {
+//   let viewport = getViewport();
+//   return Math.ceil(viewport.x / tileSize.y) * maxElements.x;
+// }
+
 </script>
 
 <style lang="postcss">

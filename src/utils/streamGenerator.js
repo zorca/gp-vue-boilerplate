@@ -1,28 +1,25 @@
-export function generateStream(fn) {
+export function generateStream (fn, options = {}) {
   let i = 0;
-  const next = async () => {
-    let data = await fn(i);
+  const next = async (options) => {
+    let output = await fn(i, options);
     i++;
-    if (data.length) {
-      return data;
+    if (output.length) {
+      return output;
     }
     return;
   };
-  const iterator = generator(next);
+  const iterator = generator(next, options);
+  iterator.next();
   return iterator;
 }
 
-async function* generator(next) {
-  let i = 0;
+async function* generator (next, options) {
+  let output;
+  let input;
   while (true) {
-    let result = await next();
-    if (!result) {
-      return;
-    }
-    yield result;
-    i++;
-    if (i > 100) {
-      console.warn('frühzeitiges aussteigen');
+    input = yield output;
+    output = await next(input || options);
+    if (!output) {
       return;
     }
   }
