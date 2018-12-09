@@ -12,7 +12,7 @@ export function getMovies () {
 
 export function getMoviesBy (options) {
   return generateStream((i, options) => {
-    let url = `list/?iDisplayStart=0&iDisplayLength=10&Page=${i + 1}&Per_Page=${options.length}&per_page=${options.length}&ListMode=cover&additional={"fType":"movie","Length":${options.length},"fLetter":"Q"}`;
+    let url = `list/?iDisplayStart=0&iDisplayLength=10&Page=${i + 1}&Per_Page=${options.length}&per_page=${options.length}&ListMode=cover&additional={"fType":"movie","Length":${options.length},"fLetter":"E"}`;
     return doGetRequest(url).then(result => {
       return getNodesFromHTMLStringBySelector(
         result.Content,
@@ -20,6 +20,14 @@ export function getMoviesBy (options) {
       ).map(item => collectPreviewConfig(item));
     });
   }, options);
+}
+
+export function getTotalCountOf () {
+  let num = 1;
+  let url = `list/?iDisplayStart=0&iDisplayLength=10&Page=0&Per_Page=${num}&per_page=${num}&ListMode=cover&additional={"fType":"movie","Length":${num},"fLetter":"E"}`;
+  return doGetRequest(url).then(result => {
+    return result.Total;
+  });
 }
 
 export function getMovieSourceUrls (url) {

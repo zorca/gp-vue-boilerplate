@@ -46,18 +46,24 @@ export default {
   watch: {
     config: {
       handler (value) {
-        this.title = value.title;
-        this.description = value.description;
-        this.url = value.url;
-        this.preview = value.preview;
-        this.lang = value.lang;
-        this.imdb = value.imdb;
+        this.preview = '';
+        this.$nextTick(() => {
+          this.preview = value.preview;
+          this.title = value.title;
+          this.description = value.description;
+          this.url = value.url;
+          this.lang = value.lang;
+          this.imdb = value.imdb;
+        });
       },
       immediate: true,
     },
+
     preview: {
-      handler (url) {
-        this.src = '';
+      handler (url = '') {
+        this.$nextTick(() => {
+          this.src = '';
+        });
         this.image.src = url;
       }
     }
@@ -65,7 +71,9 @@ export default {
 
   mounted () {
     this.image.onload = () => {
-      this.src = this.image.src;
+      this.$nextTick(() => {
+        this.src = this.image.src;
+      });
     };
   },
 

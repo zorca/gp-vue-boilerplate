@@ -6,7 +6,7 @@
   >
     <li
       :style="transform"
-      :data-pos="position"
+      :data-pos="num"
     >
       <slot :config="config" />
     </li>
@@ -14,8 +14,6 @@
 </template>
 
 <script>
-
-import { subscribeOnce } from '../../../service/animationFrame';
 import { subscribeToViewport } from '../../../service/viewport';
 
 export default {
@@ -24,11 +22,20 @@ export default {
       type: Boolean,
       default: false
     },
-    position: {
+    num: {
       type: Number,
       default: 0
     },
     offset: {
+      type: Object,
+      default () {
+        return {
+          x: 0,
+          y: 0
+        };
+      }
+    },
+    step: {
       type: Object,
       default () {
         return {
@@ -57,12 +64,13 @@ export default {
   data () {
     return {
       transform: getTransform(),
-      step: { x: 0, y: 0 },
+      segment: { x: 0, y: 0 },
       size: {
         x: 0,
         y: 0
       },
-      num: 0,
+      index: 0,
+      position: { x: 0, y: 0 },
       config: {},
       margin: '100% 0px 100% 0px'
     };
@@ -71,21 +79,20 @@ export default {
   watch: {
     items: {
       handler () {
-        // console.log(value);
-        this.updateElement();
-      }
+        this.config = this.items[this.index];
+      },
+      deep: false
     }
   },
 
+  created () {
+    // console.log('AHA');
+    // console.log(this.step.y);
+  },
+
   mounted () {
-    this.updateSize();
-    if (this.master) {
-      this.$parent.$emit('load', this.size);
-      this.resizeSubscriber = subscribeToViewport(() => {
-        this.updateSize();
-        this.$parent.$emit('resize', this.size);
-      });
-    }
+    this.onResize();
+    this.resizeSubscriber = subscribeToViewport(this.onResize);
   },
 
   destroyed () {
@@ -95,36 +102,21 @@ export default {
   },
 
   methods: {
-    leave (e) {
-      this.updateStep(e);
+    onResize () {
+      this.updateSize();
       this.updateElement();
-    },
-
-    updateStep (e) {
-      this.step.x = clampMin(this.step.x + (e.scroll.direction.x / Math.abs(e.scroll.direction.x)) || 0);
-      this.step.y = clampMin(this.step.y + (e.scroll.direction.y / Math.abs(e.scroll.direction.y)) || 0);
-
       if (this.master) {
-        this.$parent.$emit('next', this.step);
+        this.$parent.$emit('resize', this.size);
       }
     },
 
-    updateElement () {
-      this.num = this.range.x * this.range.y * this.step.y + this.position;
-      if (this.items[this.num]) {
+    leave (e) {
+      this.updateCurrentSegmentIndex(e);
 
-        let x = this.range.x * this.step.x * 100;
-        let y = this.range.y * this.step.y * 100;
-        let config = this.items[this.num];
-        subscribeOnce(() => {
-          this.config = config;
-          this.$el.style.transform = getTransform(x, y);
-        });
-      } else {
-        if (this.step.y < 1) {
-          return;
-        }
-        this.step.y--;
+      // console.log(this.segment.y, this.num, e.scroll.direction.y);
+      this.updateElement();
+      if (this.master) {
+        this.$parent.$emit('next', this.segment);
       }
     },
 
@@ -133,8 +125,41 @@ export default {
       this.size.x = bounds.width;
       this.size.y = bounds.height;
       this.margin = `${this.size.y * this.offset.y}px ${this.size.x * this.offset.x}px`;
+    },
 
-      this.updateElement();
+    updateElement () {
+      this.index = this.getCurrentIndex();
+      if (this.items[this.index]) {
+        this.updateContent();
+        this.updatePosition();
+      } else {
+        if (this.segment.y < 1) {
+          return;
+        }
+        this.segment.y--;
+      }
+    },
+
+    updateContent () {
+      this.config = this.items[this.index];
+    },
+
+    updatePosition () {
+      this.position.x = this.range.x * this.segment.x * 100;
+      this.position.y = this.range.y * this.segment.y * 100;
+      this.$nextTick(() => {
+        // console.log(this.position.y);
+        this.$el.style.transform = getTransform(this.position.x, this.position.y);
+      });
+    },
+
+    updateCurrentSegmentIndex (e) {
+      this.segment.x = clampMin(this.segment.x + (e.scroll.direction.x / Math.abs(e.scroll.direction.x)) || 0);
+      this.segment.y = clampMin(this.segment.y + (e.scroll.direction.y / Math.abs(e.scroll.direction.y)) || 0);
+    },
+
+    getCurrentIndex () {
+      return this.range.x * this.range.y * this.segment.y + this.num;
     }
   }
 };
@@ -151,8 +176,11 @@ function clampMin (value, min = 0) {
 <style lang="postcss" scoped>
 li {
   position: relative;
+  box-sizing: border-box;
   display: block;
   width: 20%;
+  overflow: hidden;
+  border: 1px solid black;
 
   &.tile {
     float: left;

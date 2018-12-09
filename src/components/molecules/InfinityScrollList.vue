@@ -6,10 +6,11 @@
     <item
       v-for="(item, key) in itemsInit"
       :key="key"
-      :position="key"
+      :num="key"
       :master="item.master"
       :range="range"
       :offset="offset"
+      :step="segment"
       :items="items"
       class="tile"
     >
@@ -24,11 +25,12 @@
 </template>
 
 <script>
+import Vue from 'vue';
 import Preview from '@/components/atoms/Preview';
 import Item from '@/components/molecules/infinityScrollList/Item';
 import { getViewport } from '../../service/viewport';
-import { getMovieSourceUrls, getMoviesBy } from '@/service/kinox';
-let count = 20;
+import { getMovieSourceUrls, getMoviesBy, getTotalCountOf } from '@/service/kinox';
+
 export default {
   components: {
     Preview,
@@ -44,52 +46,49 @@ export default {
         y: 0
       },
       offset: {
-        x: 5,
-        y: 5
-      }
+        x: 0,
+        y: 2
+      },
+      segment: {
+        x: 0,
+        y: 0
+      },
+      count: 0
     };
   },
 
   mounted () {
-    this.$on('load', this.onLoad);
     this.$on('resize', this.onResize);
     this.$on('next', this.onNext);
-    this.getMoviesByGenre();
+
+    this.setup();
   },
 
   methods: {
-    onLoad (tileSize) {
-      let maxElementsOnAxis = this.getMaxElementsInViewport(tileSize);
-      this.range = this.getRangeOfElementsByAxis(maxElementsOnAxis);
-      // console.log(tileSize, getViewport());
-      // let numOffsetTiles = getNumOffsetTilesByViewportWidth(tileSize, maxElementsOnAxis);
-
-      let maxElements = (maxElementsOnAxis.x * maxElementsOnAxis.y) + (maxElementsOnAxis.x * this.offset.y * 2);
-      this.createElements(maxElements);
-    },
-
-    onResize (size) {
-      let maxElementsOnAxis = this.getMaxElementsInViewport(size);
-      this.range = this.getRangeOfElementsByAxis(maxElementsOnAxis);
-
-      let maxElements = (maxElementsOnAxis.x * maxElementsOnAxis.y) + (maxElementsOnAxis.x * this.offset.y * 2);
-      // this.createElements(maxElements);
-      this.onNext({ x: 0, y: 0 }).then(() => {
-        // this.items[0].master = true;
-        this.itemsInit = this.items.slice(0, maxElements);
+    setup () {
+      getTotalCountOf().then((count) => {
+        this.iterator = getMoviesBy({ length: 60 });
+        this.items = Array.apply(null, { length: count }).map(() => { return {}; });
+        let item = { master: true };
+        this.itemsInit = [item];
       });
     },
 
-    onNext (step) {
-      let offset = (this.range.x * this.range.y * 3) + (this.range.x * this.range.y * step.y);
-      if (offset > this.items.length) {
-        count++;
-        console.log('REQUESTED LENGTH', count);
-        return this.iterator.next({ length: count }).then(({ value = [], done }) => {
-          console.log('RESPONSE LENGTH', value.length);
-          this.items = this.items.concat(value);
+    onResize (tileSize) {
+      // console.log(this.segment);
+      this.range = this.getRange(getElementsInViewport(tileSize));
+      this.createElements(this.range.x * this.range.y);
+      this.$el.style.height = (Math.ceil(this.items.length / this.range.x) * tileSize.y) + 'px';
+      // global.scrollTo(0, 3000);
+    },
+
+    onNext (segment) {
+      this.segment = segment;
+      // console.log(this.count * 60, this.range.x * this.range.y * (step.y + 2));
+      if (this.count * 60 < this.range.x * this.range.y * (segment.y + 2)) {
+        return this.getNext().then((done) => {
           if (!done) {
-            this.onNext(step);
+            this.onNext(segment);
           }
         });
       } else {
@@ -107,46 +106,43 @@ export default {
     },
 
     createElements (num) {
-      this.itemsInit = [{ master: true }, ...new Array(num - 1).fill({})];
-      this.$off('load', this.onLoad);
-      console.log(this.itemsInit);
-      this.onNext({ x: 0, y: 0 }).then(() => {
-        // this.items[0].master = true;
-        // this.itemsInit = this.items.slice(0, num);
+      this.itemsInit = [{ master: true }, ...Array.apply(null, { length: num - 1 }).map(() => { return { step: { x: this.segment.x, y: this.segment.y } }; })];
+      this.onNext(this.segment);
+    },
+
+    getNext () {
+      return this.iterator.next({ length: 60 }).then(({ value = [], done }) => {
+        value.forEach((item, i) => {
+          Vue.set(this.items, this.count * 60 + i, item);
+        });
+        this.count++;
+        return done;
       });
     },
 
-    getMoviesByGenre () {
-      this.iterator = getMoviesBy({ length: count });
-      let item = { master: true };
-      this.itemsInit = [item];
-    },
-
-    getRangeOfElementsByAxis (maxElementsInViewport) {
+    getRange (maxElementsInViewport) {
       return {
-        x: maxElementsInViewport.x,
+        x: maxElementsInViewport.x + this.offset.x * 2,
         y: maxElementsInViewport.y + this.offset.y * 2
-      };
-    },
-
-    getMaxElementsInViewport (size) {
-      let viewport = getViewport();
-      return {
-        x: Math.floor(viewport.x / size.x),
-        y: Math.ceil(viewport.y / size.y)
       };
     }
   }
 };
 
-// function getNumOffsetTilesByViewportWidth (tileSize, maxElements) {
-//   let viewport = getViewport();
-//   return Math.ceil(viewport.x / tileSize.y) * maxElements.x;
-// }
-
+function getElementsInViewport (size) {
+  let viewport = getViewport();
+  return {
+    x: Math.floor(viewport.x / size.x),
+    y: Math.ceil(viewport.y / size.y)
+  };
+}
 </script>
 
 <style lang="postcss">
+body {
+  overflow-y: scroll;
+}
+
 ul {
   position: relative;
   padding: 0;

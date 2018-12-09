@@ -1,4 +1,5 @@
 import Vue from 'vue';
+// require('intersection-observer-polyfill/dist/IntersectionObserver.global');
 import { subscribeToScroll, getScrollValues } from '../service/scroll';
 
 const observedIntersections = new Map();
@@ -12,21 +13,21 @@ Vue.component('intersect', {
     threshold: {
       type: Array,
       required: false,
-      default() {
+      default () {
         return buildThresholdList();
       }
     },
     root: {
       type: getHTMLElement(),
       required: false,
-      default() {
+      default () {
         return null;
       }
     },
     rootMargin: {
       type: String,
       required: false,
-      default() {
+      default () {
         return '0px 0px 0px 0px';
       }
     }
@@ -34,23 +35,27 @@ Vue.component('intersect', {
 
   watch: {
     rootMargin: {
-      handler() {
+      handler () {
         this.setupIntersectionObserver();
       }
     }
   },
 
-  mounted() {
+  mounted () {
     this.scrollObserver = subscribeToScroll(e => onScroll.bind(this)(e));
     this.setupIntersectionObserver();
   },
 
-  destroyed() {
+  updated () {
+    // console.log('AJA');
+  },
+
+  destroyed () {
     this.destroyObserver();
   },
 
   methods: {
-    setupIntersectionObserver() {
+    setupIntersectionObserver () {
       this.destroyObserver();
       this.intersectionObserver = new IntersectionObserver(
         onIntersect.bind(this),
@@ -63,26 +68,26 @@ Vue.component('intersect', {
       this.intersectionObserver.observe(this.$el);
     },
 
-    destroyObserver() {
+    destroyObserver () {
       if (this.intersectionObserver) {
         this.intersectionObserver.disconnect();
       }
     }
   },
 
-  render() {
+  render () {
     return this.$slots.default ? this.$slots.default[0] : null;
   }
 });
 
-function getHTMLElement() {
+function getHTMLElement () {
   if (typeof window === 'undefined') {
     return Object;
   }
   return window.HTMLElement;
 }
 
-function buildThresholdList() {
+function buildThresholdList () {
   var thresholds = [];
   var numSteps = 100;
 
@@ -95,7 +100,7 @@ function buildThresholdList() {
   return thresholds;
 }
 
-function onScroll() {
+function onScroll () {
   let bounds = this.$el.getBoundingClientRect();
   observedIntersections.forEach(item => {
     addIntersectionValues(item, bounds);
@@ -103,7 +108,7 @@ function onScroll() {
   });
 }
 
-function onIntersect([entry]) {
+function onIntersect ([entry]) {
   this.entry = entry;
   entry.scroll = getScrollValues();
   entry.intersection = { x: 0, y: 0 };
@@ -111,7 +116,7 @@ function onIntersect([entry]) {
   this.$emit(getIntersectionState(entry), entry);
 }
 
-function getIntersectionState(entry) {
+function getIntersectionState (entry) {
   if (!entry.isIntersecting) {
     observedIntersections.delete(entry.target);
     return 'leave';
@@ -120,7 +125,7 @@ function getIntersectionState(entry) {
   return 'enter';
 }
 
-function addIntersectionValues(entry, bounds) {
+function addIntersectionValues (entry, bounds) {
   viewport.y = entry.rootBounds.height;
   viewport.x = entry.rootBounds.width;
   offset.x = (viewport.x - bounds.width) / 2;
@@ -133,6 +138,6 @@ function addIntersectionValues(entry, bounds) {
   );
 }
 
-function clamp(value, min = -1, max = 1) {
+function clamp (value, min = -1, max = 1) {
   return Math.min(Math.max(value, min), max);
 }
