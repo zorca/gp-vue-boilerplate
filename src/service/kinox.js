@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { generateStream } from '@/utils/streamGenerator';
+// const test = require('worker-loader!@/worker/xhr.worker.js');
 
 export function getMovies () {
   return doGetRequest('movies/', {}).then(result => {
@@ -11,14 +12,29 @@ export function getMovies () {
 }
 
 export function getMoviesBy (options) {
+  // let wp = new WorkerPipeline(['xhr']);
+  // console.log('BOOK', test);
+  // console.log((new test()).postMessage('toll'));
+
   return generateStream((i, options) => {
     let url = `list/?iDisplayStart=0&iDisplayLength=10&Page=${i + 1}&Per_Page=${options.length}&per_page=${options.length}&ListMode=cover&additional={"fType":"movie","Length":${options.length},"fLetter":"E"}`;
-    return doGetRequest(url).then(result => {
-      return getNodesFromHTMLStringBySelector(
-        result.Content,
-        'div[onclick]'
-      ).map(item => collectPreviewConfig(item));
+    return import('worker-loader!@/worker/' + 'xhr' + '.worker.js').then(Worker => {
+      return new Promise((resolve) => {
+        let worker = (new Worker.default());
+        worker.addEventListener('message', (result) => {
+          resolve(result.data);
+        });
+        worker.postMessage({ url: url });
+      });
+
+
     });
+    // return doGetRequest(url).then(result => {
+    //   return getNodesFromHTMLStringBySelector(
+    //     result.Content,
+    //     'div[onclick]'
+    //   ).map(item => collectPreviewConfig(item));
+    // });
   }, options);
 }
 

@@ -1,22 +1,22 @@
 <template>
-  <div>
-    <a
-      :href="url"
-      @click="onClick"
+  <a
+    :href="url"
+    @click="onClick"
+  >
+    <img
+      :src="src"
+      class="poster"
     >
+    <section>
       <h3>{{ title }}</h3>
       <p>{{ description }}</p>
-      <img
-        :src="src"
-        class="poster"
-      >
       <img
         :src="lang"
         class="lang"
       >
       <span>{{ imdb }}</span>
-    </a>
-  </div>
+    </section>
+  </a>
 </template>
 
 <script>
@@ -87,47 +87,51 @@ export default {
 </script>
 
 <style lang="postcss" scoped>
-div {
-  margin-top: calc(150 / 105 * 100%);
+a {
+  display: block;
+  width: 100%;
+  height: 100%;
 
-  & a {
+  &::before {
+    float: left;
+    width: 100%;
+    height: 0;
+    padding-top: calc(150 / 105 * 100%);
+    margin-left: -1px;
+    content: "";
+  }
+
+  & h3 {
     position: absolute;
     top: 0;
-    left: 0;
+    width: 100%;
+  }
+
+  & p {
+    position: absolute;
+    bottom: 0;
+    display: none;
+    height: 3em;
+    overflow: hidden;
+  }
+
+  & .poster {
+    position: absolute;
+    top: 0;
     display: block;
     width: 100%;
-    height: 100%;
+  }
 
-    & h3 {
-      position: absolute;
-      top: 0;
-      width: 100%;
-    }
+  & .lang {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+  }
 
-    & p {
-      position: absolute;
-      bottom: 0;
-      display: none;
-      height: 3em;
-      overflow: hidden;
-    }
-
-    & .poster {
-      display: block;
-      width: 100%;
-    }
-
-    & .lang {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-    }
-
-    & span {
-      position: absolute;
-      right: 0;
-      bottom: 0;
-    }
+  & span {
+    position: absolute;
+    right: 0;
+    bottom: 0;
   }
 }
 </style>

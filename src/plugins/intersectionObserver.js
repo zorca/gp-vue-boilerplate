@@ -66,6 +66,7 @@ Vue.component('intersect', {
         }
       );
       this.intersectionObserver.observe(this.$el);
+      this.bounds = this.$el.getBoundingClientRect();
     },
 
     destroyObserver () {
@@ -101,9 +102,9 @@ function buildThresholdList () {
 }
 
 function onScroll () {
-  let bounds = this.$el.getBoundingClientRect();
+  this.bounds = this.$el.getBoundingClientRect();
   observedIntersections.forEach(item => {
-    addIntersectionValues(item, bounds);
+    addIntersectionValues(item, this.bounds);
     this.$emit('passing', item);
   });
 }
@@ -112,7 +113,7 @@ function onIntersect ([entry]) {
   this.entry = entry;
   entry.scroll = getScrollValues();
   entry.intersection = { x: 0, y: 0 };
-  addIntersectionValues(entry, this.$el.getBoundingClientRect());
+  addIntersectionValues(entry, this.bounds);
   this.$emit(getIntersectionState(entry), entry);
 }
 

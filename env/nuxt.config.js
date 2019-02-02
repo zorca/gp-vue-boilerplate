@@ -14,8 +14,14 @@ module.exports = {
     //   reportFilename: path.resolve('reports/webpack-bundle-analyzer.html'),
     //   openAnalyzer: false
     // },
-    parallel: true,
-    transpile: []
+    parallel: false,
+    transpile: [],
+    extend (config) {
+      /*
+      ** Required for HotModuleReloading to work with worker-loader
+      */
+      config.output.globalObject = 'this';
+    }
   },
   render: {
     http2: { push: true }
@@ -38,6 +44,7 @@ module.exports = {
     '@/modules/svg',
     '@/modules/webp',
     '@/modules/image',
+    // '@/modules/worker',
     '@nuxtjs/axios',
     [
       'nuxt-i18n',

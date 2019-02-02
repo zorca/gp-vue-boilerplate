@@ -91,6 +91,7 @@ export default {
   },
 
   mounted () {
+    this.segment.y = this.step.y;
     this.onResize();
     this.resizeSubscriber = subscribeToViewport(this.onResize);
   },
