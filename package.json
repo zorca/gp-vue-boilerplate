@@ -97,6 +97,7 @@
     "@nuxtjs/pwa": "^3.0.0-beta.16",
     "@nuxtjs/robots": "^2.2.0",
     "default-passive-events": "^1.0.10",
+    "dom-parser": "^0.1.6",
     "inputmask": "^4.0.8",
     "intersection-observer": "^0.7.0",
     "nuxt": "^2.8.1",
