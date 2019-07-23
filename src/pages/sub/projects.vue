@@ -1,21 +1,17 @@
 <i18n>
 {
   "en": {
-    "test": "message23",
-    "hello": "hello world!"
+
   },
   "de": {
-    "test": "nachricht 123",
-    "hello": "hallo welt"
+
   }
 }
 </i18n>
 
 <template>
   <div>
-    hello2 huhu234 {{ $t('configxyz') }}
-    {{ $t('test') }}
-    <br>
+    <test-form />
   </div>
 </template>
 
@@ -29,7 +25,7 @@ export default {
   },
 
   components: {
-
+    TestForm: () => import('@/components/organisms/TestForm')
   },
 
   head () {
