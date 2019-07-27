@@ -98,7 +98,8 @@ module.exports = {
 
   plugins: [
     { src: '@/plugins/intersectionObserver' },
-    { src: '@/plugins/lazyHydrate' }
+    { src: '@/plugins/lazyHydrate' },
+    { src: '@/plugins/pointer', mode: 'client' },
   ],
 
   modules: [
