@@ -24,10 +24,16 @@ export default {
         return 100;
       }
     },
-    model: {
-      type: Object,
+    progress: {
+      type: Number,
       default () {
-        return {};
+        return 0;
+      }
+    },
+    range: {
+      type: Number,
+      default () {
+        return 1;
       }
     }
   },
@@ -36,7 +42,8 @@ export default {
     return {
       dimension: { x: 0, y: 0 },
       radius: 0,
-      vectorEffect: 'default'
+      vectorEffect: 'default',
+      scaling: false
     };
   },
 
@@ -45,12 +52,18 @@ export default {
       return this.size / 2;
     },
     circumference () {
-      return (2 * Math.PI * this.radius) * this.dimension.x / this.size;
+      return (2 * Math.PI * this.radius) * this.dimension.x / this.size * this.range;
     },
     strokeDasharray () {
-      return this.circumference + ' ' + this.circumference;
+      if (this.scaling) {
+        return (this.circumference / this.dimension.x * 100) + ' ' + (this.circumference / this.dimension.x * 100 / this.range);
+      }
+      return this.circumference + ' ' + this.circumference / this.range;
     },
     strokeDashoffset () {
+      if (this.scaling) {
+        return (this.circumference / this.dimension.x * 100) - (this.progress * this.circumference / this.dimension.x * 100);
+      }
       return this.circumference - this.progress * this.circumference;
     }
   },
@@ -61,9 +74,12 @@ export default {
         let strokeWidth = window.getComputedStyle(this.$el.querySelector('circle')).strokeWidth;
         if (/px$/.test(strokeWidth)) {
           this.radius = (this.dimension.x - parseInt(strokeWidth)) / this.dimension.x / 2 * this.size;
+          this.scaling = false;
           this.vectorEffect = 'non-scaling-stroke';
         } else {
+          console.log(parseInt(strokeWidth));
           this.radius = this.center - (parseInt(strokeWidth) / 2);
+          this.scaling = true;
           this.vectorEffect = 'default';
         }
       }

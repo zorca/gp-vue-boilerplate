@@ -5,34 +5,38 @@
     @pointermove="onTick"
     @pointerup="onEnd"
   >
-    <atom-circle :model="model" />
-
-    <span class="handle">
-      <span
-        class="knob"
-        @pointerdown="onStart"
+    <span class="wrapper">
+      <atom-circle
+        :progress="progress"
+        :range="range"
       />
-    </span>
 
-    <molecule-form-numeric
-      :label="label"
+      <span class="handle">
+        <span
+          class="knob"
+          @pointerdown="onStart"
+        />
+      </span>
+
+      <!-- <molecule-form-numeric
       :model="model"
-      :mask="mask"
       :min="min"
       :max="max"
-    />
+    /> -->
+    </span>
   </span>
 </template>
 
 <script>
-import MoleculeFormNumeric from '@/components/molecules/form/Numeric';
 import AtomCircle from '@/components/atoms/Circle';
-import { Victor } from '@js-basics/vector';
+// import MoleculeFormNumeric from '@/components/molecules/form/Numeric';
+import { clamp, getRadOfVector, getRadOfElement, addRadToVector } from '@/utils/math';
+import { getNormalizedPointer } from '@/utils/pointer';
 
 export default {
   components: {
-    MoleculeFormNumeric,
-    AtomCircle
+    AtomCircle,
+    // MoleculeFormNumeric
   },
 
   props: {
@@ -57,7 +61,7 @@ export default {
     max: {
       type: Number,
       default () {
-        return 100;
+        return 1000;
       }
     },
     circumference: {
@@ -65,19 +69,32 @@ export default {
       default () {
         return Math.PI * 2;
       }
-    },
-    mask: {
-      type: Object,
-      default () {
-        return {};
-      }
     }
   },
 
   data () {
+    console.log();
     return {
-      active: false
+      active: false,
+      progress: this.model.value / this.max
     };
+  },
+
+  computed: {
+    range () {
+      return this.circumference / (Math.PI * 2);
+    },
+    circumferenceCenter () {
+      return this.circumference / 2;
+    }
+  },
+
+  watch: {
+    'progress': {
+      handler (e) {
+        this.$el.style.setProperty('--rad', e * 2 * Math.PI * this.range);
+      }
+    }
   },
 
   methods: {
@@ -87,16 +104,24 @@ export default {
 
     onTick (e) {
       if (this.active) {
-        const normVector = calcNormalizedLocalPointerVector(e, this.$el.getBoundingClientRect());
-        const elemRad = getRotation(window.getComputedStyle(this.$el).transform);
-        const vector = rotateVectorByRad(normVector, -elemRad);
-        const rad = calcRad(vector);
-        console.log('dhfdhf', this.model.value);
-        const radNormalized = rad / (this.circumference);
-        if (Math.abs(radNormalized - this.model.value) < 0.5) {
+        const normVector = getNormalizedPointer(e, this.$el.getBoundingClientRect());
+        const offsetRad = getRadOfElement(this.$el);
 
-          this.model.value = clamp(radNormalized) * this.circumferenceFactor;
-          this.$el.style.setProperty('--rad', clamp(rad, this.circumference));
+        // mirror vector with calculated css rotation offset
+        // to prevent 0 to Math.PI jump at the beginning of the available range
+        // to set the zero point to the center of the available range
+        // to get a resulting radian range of -Math.PI to + Math.PI
+        const vector = addRadToVector(normVector, -offsetRad - Math.PI - this.circumferenceCenter);
+        // mirror back the resulting radian of the mirrored vector
+        const rad = getRadOfVector(vector) - Math.PI;
+        // normalize & clamp rad to the range of -1 to +1
+        const normRad = clamp(rad / this.circumferenceCenter, -1, 1);
+        // normalize rad to the range of 0 to 1
+        const normValue = (normRad + 1) / 2;
+        // move the back jump when overwinding the handle
+        if (Math.abs(this.progress - normValue) < 0.5) {
+          this.progress = normValue;
+          this.model.value = normValue * this.max;
         }
       }
     },
@@ -106,34 +131,6 @@ export default {
     }
   }
 };
-
-function calcNormalizedLocalPointerVector (e, boundingClientRect) {
-  const { x, y, width, height } = boundingClientRect;
-  const elemPos = new Victor(x, y);
-  const elemHalfSize = new Victor(() => new Victor(width, height) / 2);
-  const touchPos = new Victor(e.x, e.y);
-  return new Victor(() => (touchPos - elemPos - elemHalfSize) / elemHalfSize);
-}
-
-function calcRad (vector) {
-  return Math.atan2(vector.y, vector.x) + Math.PI;
-}
-
-// source: https://matthew-brett.github.io/teaching/rotation_2d.html
-function rotateVectorByRad (vector, rad) {
-  const x = Math.cos(rad) * vector.x - Math.sin(rad) * vector.y;
-  const y = Math.sin(rad) * vector.x + Math.cos(rad) * vector.y;
-  return new Victor(x, y);
-}
-
-function clamp (value, min = 1) {
-  return Math.min(min, value);
-}
-
-function getRotation (matrix) {
-  let m = new DOMMatrix(matrix);
-  return Math.atan2(m.b, m.a);
-}
 </script>
 
 <style lang="postcss" scoped>
@@ -143,36 +140,68 @@ span {
 
 .radial-slider {
   --rad: 0;
-  --padding: 20px;
+  --stroke-width: 5%;
+  --handle-size: 30%;
+  --uups: 30;
+  --offset: calc(-50% + 10%);
+  --test: (1 * (var(--uups) / 5));
+  --huch: calc(-50% + 50% / var(--test));
 
   position: relative;
-  padding: var(--padding);
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
-  transform: rotate(90deg);
+  transform: rotate(0deg);
+
+  &::before {
+    display: block;
+    padding-top: 100%;
+    content: "";
+  }
+
+  & .wrapper {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: auto;
+  }
 
   & svg {
+    position: absolute;
+    top: 0;
+    box-sizing: border-box;
     width: 100%;
+
+    & >>> circle {
+      stroke: #0f0;
+      stroke-width: var(--stroke-width);
+    }
   }
 
   & .handle {
     position: absolute;
     top: 0;
     left: 0;
+    box-sizing: border-box;
     width: 100%;
     height: 100%;
     transform: rotate(calc(var(--rad) * 1rad));
 
     & .knob {
-      position: absolute;
+      position: relative;
       top: 50%;
-      left: 50%;
-      width: 50px;
-      height: 50px;
-      margin-left: -50%;
+      width: var(--handle-size);
+      height: var(--handle-size);
       border: 1px solid black;
       border-radius: 50%;
-      transform: translateY(-50%);
+      transform: translate(var(--huch), -50%);
     }
   }
 }
 </style>
+

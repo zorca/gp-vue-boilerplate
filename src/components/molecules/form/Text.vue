@@ -11,7 +11,7 @@
     </template>
     <template v-slot:input>
       <atom-input
-        v-mask-numeric="mask"
+        v-mask-text="mask"
         :model="model"
         :validate="validate"
       />

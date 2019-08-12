@@ -4,12 +4,14 @@
     :message="message"
   >
     <template #input>
-      <atom-input
-        v-mask-numeric="mask"
-        :min="mask.min"
-        :max="mask.max"
-        :model="model"
-        :validate="validate"
+      <vue-numeric
+        v-model="model.value"
+        :min="min"
+        :max="max"
+        :currency="unit"
+        :currency-symbol-position="unitSymbolPosition"
+        :separator="separator"
+        :precision="precision"
       />
       <slot name="gui" />
     </template>
@@ -18,22 +20,12 @@
 
 <script>
 import AtomLabel from '@/components/atoms/Label';
-import AtomInput from '@/components/atoms/Input';
-import numericMask from '@/utils/inputmask/numericMask';
-import Vue from 'vue';
-
-Vue.directive('mask-numeric', {
-  bind: function (el, binding) {
-    if (numericMask) {
-      numericMask(binding.value).mask(el);
-    }
-  }
-});
+import VueNumeric from 'vue-numeric';
 
 export default {
   components: {
     AtomLabel,
-    AtomInput
+    VueNumeric
   },
 
   props: {
@@ -52,19 +44,37 @@ export default {
     min: {
       type: Number,
       default () {
-        return null;
+        return undefined;
       }
     },
     max: {
       type: Number,
       default () {
-        return null;
+        return undefined;
       }
     },
-    mask: {
-      type: Object,
+    unit: {
+      type: String,
       default () {
-        return {};
+        return 'm';
+      }
+    },
+    suffix: {
+      type: Boolean,
+      default () {
+        return true;
+      }
+    },
+    separator: {
+      type: String,
+      default () {
+        return '.';
+      }
+    },
+    precision: {
+      type: Number,
+      default () {
+        return 2;
       }
     }
   },
@@ -73,6 +83,15 @@ export default {
     return {
       message: ''
     };
+  },
+
+  computed: {
+    unitSymbolPosition () {
+      if (this.suffix) {
+        return 'suffix';
+      }
+      return 'prefix';
+    }
   },
 
   methods: {
@@ -88,5 +107,8 @@ export default {
 };
 </script>
 
-<style lang="postcss">
+<style lang="postcss" scoped>
+input {
+  text-align: right;
+}
 </style>

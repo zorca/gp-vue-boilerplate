@@ -11,6 +11,7 @@
         <h1>{{ label }}</h1>
       </template>
     </molecule-form-text>
+    <molecule-form-color-picker />
     <molecule-form-radial-slider v-bind="form.radialSlider" />
   </molecule-form>
 </template>
@@ -18,6 +19,7 @@
 <script>
 import MoleculeForm from '@/components/molecules/Form';
 import MoleculeFormCheckbox from '@/components/molecules/form/Checkbox';
+import MoleculeFormColorPicker from '@/components/molecules/form/ColorPicker';
 import MoleculeFormToggle from '@/components/molecules/form/Toggle';
 import MoleculeFormRadiobox from '@/components/molecules/form/Radiobox';
 import MoleculeFormSelectbox from '@/components/molecules/form/Selectbox';
@@ -29,6 +31,7 @@ export default {
   components: {
     MoleculeForm,
     MoleculeFormCheckbox,
+    MoleculeFormColorPicker,
     MoleculeFormToggle,
     MoleculeFormRadiobox,
     MoleculeFormSelectbox,
@@ -109,7 +112,7 @@ export default {
           mask: { alias: 'meter', clearMaskOnLostFocus: false, min: 0, max: 100 },
           model: {
             name: 'number',
-            value: 200
+            value: 0
           }
         },
       }
