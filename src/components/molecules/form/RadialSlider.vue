@@ -2,29 +2,27 @@
   <span
     class="radial-slider"
     touch-action="none"
-    @pointermove="onTick"
-    @pointerup="onEnd"
   >
-    <span class="wrapper">
-      <atom-circle
-        :progress="progress"
-        :range="range"
-      />
 
-      <span class="handle">
-        <span
-          class="knob"
-          @pointerdown="onStart"
-        />
-      </span>
+    <atom-circle
+      :progress="progress"
+      :range="range"
+    />
 
-      <molecule-form-numeric
-        class="numeric-input"
-        :model="model"
-        :min="min"
-        :max="max"
+    <span class="handle">
+      <span
+        class="knob"
+        @pointerdown="onStart"
       />
     </span>
+
+    <molecule-form-numeric
+      class="numeric-input"
+      :model="model"
+      :min="min"
+      :max="max"
+    />
+
   </span>
 </template>
 
@@ -33,6 +31,7 @@ import AtomCircle from '@/components/atoms/Circle';
 import MoleculeFormNumeric from '@/components/molecules/form/Numeric';
 import { clamp, getRadOfVector, getRadOfElement, addRadToVector } from '@/utils/math';
 import { getNormalizedPointer } from '@/utils/pointer';
+import { fromEvent } from 'rxjs';
 
 export default {
   components: {
@@ -75,7 +74,10 @@ export default {
 
   data () {
     return {
-      active: false
+      subscriptions: [
+        { listener: fromEvent(global.document, 'pointermove', { passive: true, capture: false }), func: this.onTick },
+        { listener: fromEvent(global.document, 'pointerup', { passive: true, capture: false }), func: this.onEnd }
+      ]
     };
   },
 
@@ -101,34 +103,37 @@ export default {
 
   methods: {
     onStart () {
-      this.active = true;
+      this.subscriptions.forEach((item) => {
+        item.listener.subscriber = item.listener.subscribe(item.func);
+      });
     },
 
     onTick (e) {
-      if (this.active) {
-        const normVector = getNormalizedPointer(e, this.$el.getBoundingClientRect());
-        const offsetRad = getRadOfElement(this.$el);
+      console.log();
+      const normVector = getNormalizedPointer(e, this.$el.getBoundingClientRect());
+      const offsetRad = getRadOfElement(this.$el);
 
-        // mirror vector with calculated css rotation offset
-        // to prevent 0 to Math.PI jump at the beginning of the available range
-        // to set the zero point to the center of the available range
-        // to get a resulting radian range of -Math.PI to + Math.PI
-        const vector = addRadToVector(normVector, -offsetRad - Math.PI - this.circumferenceCenter);
-        // mirror back the resulting radian of the mirrored vector
-        const rad = getRadOfVector(vector) - Math.PI;
-        // normalize & clamp rad to the range of -1 to +1
-        const normRad = clamp(rad / this.circumferenceCenter, -1, 1);
-        // normalize rad to the range of 0 to 1
-        const normValue = (normRad + 1) / 2;
-        // move the back jump when overwinding the handle
-        if (Math.abs(this.progress - normValue) < 0.5) {
-          this.model.value = normValue * this.max;
-        }
+      // mirror vector with calculated css rotation offset
+      // to prevent 0 to Math.PI jump at the beginning of the available range
+      // to set the zero point to the center of the available range
+      // to get a resulting radian range of -Math.PI to + Math.PI
+      const vector = addRadToVector(normVector, -offsetRad - Math.PI - this.circumferenceCenter);
+      // mirror back the resulting radian of the mirrored vector
+      const rad = getRadOfVector(vector) - Math.PI;
+      // normalize & clamp rad to the range of -1 to +1
+      const normRad = clamp(rad / this.circumferenceCenter, -1, 1);
+      // normalize rad to the range of 0 to 1
+      const normValue = (normRad + 1) / 2;
+      // move the back jump when overwinding the handle
+      if (Math.abs(this.progress - normValue) < 0.5) {
+        this.model.value = normValue * this.max;
       }
     },
 
     onEnd () {
-      this.active = false;
+      this.subscriptions.forEach((item) => {
+        item.listener.subscriber.unsubscribe();
+      });
     }
   }
 };
@@ -155,17 +160,6 @@ span {
     display: block;
     padding-top: 100%;
     content: "";
-  }
-
-  & .wrapper {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    margin: auto;
   }
 
   & svg {

@@ -6,11 +6,7 @@
     <molecule-form-selectbox v-bind="form.selectbox" />
     <molecule-form-numeric v-bind="form.numericA" />
     <molecule-form-numeric v-bind="form.numericB" />
-    <molecule-form-text v-bind="form.text">
-      <template v-slot:label="{label}">
-        <h1>{{ label }}</h1>
-      </template>
-    </molecule-form-text>
+
     <molecule-form-color-picker />
     <molecule-form-radial-slider v-bind="form.radialSlider" />
   </molecule-form>
@@ -25,7 +21,7 @@ import MoleculeFormRadiobox from '@/components/molecules/form/Radiobox';
 import MoleculeFormSelectbox from '@/components/molecules/form/Selectbox';
 import MoleculeFormNumeric from '@/components/molecules/form/Numeric';
 import MoleculeFormRadialSlider from '@/components/molecules/form/RadialSlider';
-import MoleculeFormText from '@/components/molecules/form/Text';
+// import MoleculeFormText from '@/components/molecules/form/Text';
 
 export default {
   components: {
@@ -37,7 +33,7 @@ export default {
     MoleculeFormSelectbox,
     MoleculeFormNumeric,
     MoleculeFormRadialSlider,
-    MoleculeFormText
+    // MoleculeFormText
   },
 
   data () {
