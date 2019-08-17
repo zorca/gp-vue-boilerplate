@@ -1,6 +1,7 @@
 <template>
   <span
     class="radial-slider"
+    :class="[{ 'transition-active': !active }]"
     touch-action="none"
   >
 
@@ -32,6 +33,7 @@ import MoleculeFormNumeric from '@/components/molecules/form/Numeric';
 import { clamp, getRadOfVector, getRadOfElement, addRadToVector } from '@/utils/math';
 import { getNormalizedPointer } from '@/utils/pointer';
 import { fromEvent } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 export default {
   components: {
@@ -74,10 +76,8 @@ export default {
 
   data () {
     return {
-      subscriptions: [
-        { listener: fromEvent(global.document, 'pointermove', { passive: true, capture: false }), func: this.onTick },
-        { listener: fromEvent(global.document, 'pointerup', { passive: true, capture: false }), func: this.onEnd }
-      ]
+      active: false,
+      subscriptions: []
     };
   },
 
@@ -101,15 +101,29 @@ export default {
     }
   },
 
+  mounted () {
+    const options = { passive: true, capture: false };
+    const pipe = [
+      filter(() => this.active)
+    ];
+    this.subscriptions = [
+      fromEvent(global.document, 'pointermove', options).pipe(...pipe).subscribe(this.onTick),
+      fromEvent(global.document, 'pointerup', options).pipe(...pipe).subscribe(this.onEnd)
+    ];
+  },
+
+  destroyed () {
+    this.subscriptions.forEach((item) => {
+      item.unsubscribe();
+    });
+  },
+
   methods: {
     onStart () {
-      this.subscriptions.forEach((item) => {
-        item.listener.subscriber = item.listener.subscribe(item.func);
-      });
+      this.active = true;
     },
 
     onTick (e) {
-      console.log();
       const normVector = getNormalizedPointer(e, this.$el.getBoundingClientRect());
       const offsetRad = getRadOfElement(this.$el);
 
@@ -131,9 +145,7 @@ export default {
     },
 
     onEnd () {
-      this.subscriptions.forEach((item) => {
-        item.listener.subscriber.unsubscribe();
-      });
+      this.active = false;
     }
   }
 };
@@ -202,6 +214,11 @@ span {
     position: absolute;
     top: 0;
   }
+}
+
+.transition-active .handle {
+  transition-duration: 350ms;
+  transition-property: transform;
 }
 </style>
 
