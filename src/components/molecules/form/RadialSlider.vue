@@ -6,6 +6,13 @@
   >
 
     <atom-circle
+      class="indicator"
+      :progress="Number(1)"
+      :range="range"
+    />
+
+    <atom-circle
+      class="progress"
       :progress="progress"
       :range="range"
     />
@@ -184,8 +191,13 @@ span {
     max-width: 100%;
     margin: auto;
 
-    & >>> circle {
+    &.progress >>> circle {
       stroke: #0f0;
+      stroke-width: var(--stroke-width);
+    }
+
+    &.indicator >>> circle {
+      stroke: #ddd;
       stroke-width: var(--stroke-width);
     }
   }
