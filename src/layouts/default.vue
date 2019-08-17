@@ -47,6 +47,10 @@ export default {
 body {
   margin: 0;
 }
+
+* {
+  box-sizing: border-box;
+}
 /* stylelint-disable */
 
 /* amatic-sc-regular - latin */

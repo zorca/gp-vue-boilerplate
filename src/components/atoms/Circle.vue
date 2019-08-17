@@ -77,7 +77,6 @@ export default {
           this.scaling = false;
           this.vectorEffect = 'non-scaling-stroke';
         } else {
-          console.log(parseInt(strokeWidth));
           this.radius = this.center - (parseInt(strokeWidth) / 2);
           this.scaling = true;
           this.vectorEffect = 'default';

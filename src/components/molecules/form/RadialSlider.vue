@@ -18,25 +18,26 @@
         />
       </span>
 
-      <!-- <molecule-form-numeric
-      :model="model"
-      :min="min"
-      :max="max"
-    /> -->
+      <molecule-form-numeric
+        class="numeric-input"
+        :model="model"
+        :min="min"
+        :max="max"
+      />
     </span>
   </span>
 </template>
 
 <script>
 import AtomCircle from '@/components/atoms/Circle';
-// import MoleculeFormNumeric from '@/components/molecules/form/Numeric';
+import MoleculeFormNumeric from '@/components/molecules/form/Numeric';
 import { clamp, getRadOfVector, getRadOfElement, addRadToVector } from '@/utils/math';
 import { getNormalizedPointer } from '@/utils/pointer';
 
 export default {
   components: {
     AtomCircle,
-    // MoleculeFormNumeric
+    MoleculeFormNumeric
   },
 
   props: {
@@ -73,10 +74,8 @@ export default {
   },
 
   data () {
-    console.log();
     return {
-      active: false,
-      progress: this.model.value / this.max
+      active: false
     };
   },
 
@@ -86,13 +85,16 @@ export default {
     },
     circumferenceCenter () {
       return this.circumference / 2;
+    },
+    progress () {
+      return this.model.value / this.max;
     }
   },
 
   watch: {
-    'progress': {
-      handler (e) {
-        this.$el.style.setProperty('--rad', e * 2 * Math.PI * this.range);
+    'model.value': {
+      handler () {
+        this.$el.style.setProperty('--rad', this.progress * 2 * Math.PI * this.range);
       }
     }
   },
@@ -120,7 +122,6 @@ export default {
         const normValue = (normRad + 1) / 2;
         // move the back jump when overwinding the handle
         if (Math.abs(this.progress - normValue) < 0.5) {
-          this.progress = normValue;
           this.model.value = normValue * this.max;
         }
       }
@@ -141,16 +142,12 @@ span {
 .radial-slider {
   --rad: 0;
   --stroke-width: 5%;
-  --handle-size: 30%;
-  --uups: 30;
-  --offset: calc(-50% + 10%);
-  --test: (1 * (var(--uups) / 5));
-  --huch: calc(-50% + 50% / var(--test));
+  --handle-size: 20%;
+  --translate: calc(var(--handle-size) / 2 - var(--stroke-width) / 2);
+  --size: calc(100% - var(--handle-size) + var(--stroke-width));
 
   position: relative;
-  box-sizing: border-box;
   width: 100%;
-  height: 100%;
   overflow: hidden;
   transform: rotate(0deg);
 
@@ -174,8 +171,12 @@ span {
   & svg {
     position: absolute;
     top: 0;
-    box-sizing: border-box;
-    width: 100%;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: var(--size);
+    max-width: 100%;
+    margin: auto;
 
     & >>> circle {
       stroke: #0f0;
@@ -187,20 +188,25 @@ span {
     position: absolute;
     top: 0;
     left: 0;
-    box-sizing: border-box;
     width: 100%;
     height: 100%;
-    transform: rotate(calc(var(--rad) * 1rad));
+    transform: rotate(calc(var(--rad) * 1rad)) translateX(var(--translate));
 
     & .knob {
       position: relative;
       top: 50%;
       width: var(--handle-size);
       height: var(--handle-size);
+      margin-left: calc(var(--stroke-width) / 2);
       border: 1px solid black;
       border-radius: 50%;
-      transform: translate(var(--huch), -50%);
+      transform: translate(-50%, -50%);
     }
+  }
+
+  & .numeric-input {
+    position: absolute;
+    top: 0;
   }
 }
 </style>
