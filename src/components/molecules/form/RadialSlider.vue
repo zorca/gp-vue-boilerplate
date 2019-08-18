@@ -4,7 +4,6 @@
     :class="[{ 'transition-active': !active }]"
     touch-action="none"
   >
-
     <atom-circle
       class="indicator"
       :progress="Number(1)"
@@ -30,14 +29,19 @@
       :min="min"
       :max="max"
     />
-
   </span>
 </template>
 
 <script>
 import AtomCircle from '@/components/atoms/Circle';
 import MoleculeFormNumeric from '@/components/molecules/form/Numeric';
-import { clamp, getRadOfVector, getRadOfElement, addRadToVector } from '@/utils/math';
+import {
+  clamp,
+  getRadOfVector,
+  getRadOfElement,
+  addRadToVector
+} from '@/utils/math';
+import { reverse, easeInQuad } from '@/utils/easing';
 import { getNormalizedPointer } from '@/utils/pointer';
 import { fromEvent } from 'rxjs';
 import { filter } from 'rxjs/operators';
@@ -76,13 +80,7 @@ export default {
     easing: {
       type: Function,
       default (value) {
-        return value * value;
-      }
-    },
-    reverseEasing: {
-      type: Function,
-      default (value) {
-        return Math.sqrt(value);
+        return easeInQuad(value);
       }
     },
     circumference: {
@@ -96,7 +94,8 @@ export default {
   data () {
     return {
       active: false,
-      subscriptions: []
+      subscriptions: [],
+      reverse: reverse(this.easing)
     };
   },
 
@@ -108,15 +107,17 @@ export default {
       return this.circumference / 2;
     },
     progress () {
-      console.log(this.model.value, 'muss zurückgerechnet werden - wertebereich 0-1');
-      return this.reverseEasing(this.model.value / this.max);
+      return this.reverse(this.model.value / this.max);
     }
   },
 
   watch: {
     'model.value': {
       handler () {
-        this.$el.style.setProperty('--rad', this.progress * 2 * Math.PI * this.range);
+        this.$el.style.setProperty(
+          '--rad',
+          this.progress * 2 * Math.PI * this.range
+        );
       }
     }
   },
@@ -127,13 +128,17 @@ export default {
       filter(() => this.active)
     ];
     this.subscriptions = [
-      fromEvent(global.document, 'pointermove', options).pipe(...pipe).subscribe(this.onTick),
-      fromEvent(global.document, 'pointerup', options).pipe(...pipe).subscribe(this.onEnd)
+      fromEvent(global.document, 'pointermove', options)
+        .pipe(...pipe)
+        .subscribe(this.onTick),
+      fromEvent(global.document, 'pointerup', options)
+        .pipe(...pipe)
+        .subscribe(this.onEnd)
     ];
   },
 
   destroyed () {
-    this.subscriptions.forEach((item) => {
+    this.subscriptions.forEach(item => {
       item.unsubscribe();
     });
   },
@@ -144,14 +149,20 @@ export default {
     },
 
     onTick (e) {
-      const normVector = getNormalizedPointer(e, this.$el.getBoundingClientRect());
+      const normVector = getNormalizedPointer(
+        e,
+        this.$el.getBoundingClientRect()
+      );
       const offsetRad = getRadOfElement(this.$el);
 
       // mirror vector with calculated css rotation offset
       // to prevent 0 to Math.PI jump at the beginning of the available range
       // to set the zero point to the center of the available range
       // to get a resulting radian range of -Math.PI to + Math.PI
-      const vector = addRadToVector(normVector, -offsetRad - Math.PI - this.circumferenceCenter);
+      const vector = addRadToVector(
+        normVector,
+        -offsetRad - Math.PI - this.circumferenceCenter
+      );
       // mirror back the resulting radian of the mirrored vector
       const rad = getRadOfVector(vector) - Math.PI;
       // normalize & clamp rad to the range of -1 to +1
