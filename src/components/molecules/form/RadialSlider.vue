@@ -108,15 +108,14 @@ export default {
       return this.circumference / 2;
     },
     progress () {
+      console.log(this.model.value, 'muss zurückgerechnet werden - wertebereich 0-1');
       return this.reverseEasing(this.model.value / this.max);
     }
   },
 
   watch: {
     'model.value': {
-      handler (e) {
-        console.log(e, 'müsste zurückgerechnet werden');
-        // this.progress müsste durch den zurückgerechneten wert ersetzt werden
+      handler () {
         this.$el.style.setProperty('--rad', this.progress * 2 * Math.PI * this.range);
       }
     }
