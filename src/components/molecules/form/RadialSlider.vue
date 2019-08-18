@@ -79,6 +79,12 @@ export default {
         return value * value;
       }
     },
+    reverseEasing: {
+      type: Function,
+      default (value) {
+        return Math.sqrt(value);
+      }
+    },
     circumference: {
       type: Number,
       default () {
@@ -102,7 +108,7 @@ export default {
       return this.circumference / 2;
     },
     progress () {
-      return this.model.value / this.max;
+      return this.reverseEasing(this.model.value / this.max);
     }
   },
 
