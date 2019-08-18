@@ -73,6 +73,12 @@ export default {
         return 1000;
       }
     },
+    easing: {
+      type: Function,
+      default (value) {
+        return value * value;
+      }
+    },
     circumference: {
       type: Number,
       default () {
@@ -102,7 +108,9 @@ export default {
 
   watch: {
     'model.value': {
-      handler () {
+      handler (e) {
+        console.log(e, 'müsste zurückgerechnet werden');
+        // this.progress müsste durch den zurückgerechneten wert ersetzt werden
         this.$el.style.setProperty('--rad', this.progress * 2 * Math.PI * this.range);
       }
     }
@@ -147,7 +155,9 @@ export default {
       const normValue = (normRad + 1) / 2;
       // move the back jump when overwinding the handle
       if (Math.abs(this.progress - normValue) < 0.5) {
-        this.model.value = normValue * this.max;
+        this.model.value = this.easing(normValue) * this.max;
+      } else {
+        this.model.value = Math.round(this.progress) * this.max;
       }
     },
 

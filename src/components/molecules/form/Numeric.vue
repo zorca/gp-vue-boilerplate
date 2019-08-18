@@ -96,7 +96,6 @@ export default {
 
   methods: {
     validate (e) {
-      console.log('AHA');
       if (e.target.validity.valueMissing) {
         this.message = 'value missing';
       } else {
