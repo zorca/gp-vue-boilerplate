@@ -6,16 +6,18 @@ function createReverseFormula (formula, scale) {
   });
 
   return output => {
-    let distance = Number.POSITIVE_INFINITY;
-
-    return list.reduce((closest, { inp, out }) => {
-      const dist = Math.abs(output - out);
-      if (dist < distance) {
-        distance = dist;
-        closest = inp;
-      }
-      return closest;
-    }, Number.POSITIVE_INFINITY);
+    const res = list.reduce(
+      ({ distance, closest }, { inp, out }) => {
+        const dist = Math.abs(output - out);
+        if (dist < distance) {
+          distance = dist;
+          closest = inp;
+        }
+        return { distance, closest };
+      },
+      { distance: Number.POSITIVE_INFINITY }
+    );
+    return res.closest;
   };
 }
 

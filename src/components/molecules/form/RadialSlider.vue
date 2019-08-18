@@ -149,20 +149,14 @@ export default {
     },
 
     onTick (e) {
-      const normVector = getNormalizedPointer(
-        e,
-        this.$el.getBoundingClientRect()
-      );
+      const normVector = getNormalizedPointer(e, this.$el.getBoundingClientRect());
       const offsetRad = getRadOfElement(this.$el);
 
       // mirror vector with calculated css rotation offset
       // to prevent 0 to Math.PI jump at the beginning of the available range
       // to set the zero point to the center of the available range
       // to get a resulting radian range of -Math.PI to + Math.PI
-      const vector = addRadToVector(
-        normVector,
-        -offsetRad - Math.PI - this.circumferenceCenter
-      );
+      const vector = addRadToVector(normVector, -offsetRad - Math.PI - this.circumferenceCenter);
       // mirror back the resulting radian of the mirrored vector
       const rad = getRadOfVector(vector) - Math.PI;
       // normalize & clamp rad to the range of -1 to +1
