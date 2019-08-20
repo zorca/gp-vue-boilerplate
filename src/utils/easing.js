@@ -21,8 +21,14 @@ function createReverseFormula (formula, scale) {
   };
 }
 
+function createMemoizedFormula (formula, scale) {
+  const list = new Array(scale + 1).fill(0).map((_, i) => formula(i / scale));
+  return output => list[Math.round(output * scale)];
+}
+
 export function reverse (formula, scale = 1000) {
-  return createReverseFormula(formula, scale);
+  const reverse = createReverseFormula(formula, scale);
+  return createMemoizedFormula(reverse, scale);
 }
 
 export function linear (t) { return t; }

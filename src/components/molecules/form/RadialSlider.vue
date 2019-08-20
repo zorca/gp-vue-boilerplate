@@ -29,6 +29,7 @@
       :min="min"
       :max="max"
     />
+
   </span>
 </template>
 

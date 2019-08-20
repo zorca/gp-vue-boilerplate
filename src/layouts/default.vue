@@ -48,6 +48,11 @@ body {
   margin: 0;
 }
 
+html.freeze,
+html.freeze body {
+  overflow: hidden;
+}
+
 * {
   box-sizing: border-box;
 }

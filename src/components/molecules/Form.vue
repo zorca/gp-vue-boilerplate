@@ -21,7 +21,7 @@ export default {
   methods: {
     checkForm (e) {
       e.preventDefault();
-      console.log(this.data);
+      // console.log(this.data);
     }
   }
 };

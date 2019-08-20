@@ -1,5 +1,10 @@
 <template>
   <molecule-form :data="form">
+    <atom-connector
+      :start="{x: 100, y: 100}"
+      :end="{x: 400, y: 200}"
+    />
+    <molecule-overlay />
     <molecule-form-checkbox v-bind="form.checkbox" />
     <molecule-form-toggle v-bind="form.toggle" />
     <molecule-form-radiobox v-bind="form.radiobox" />
@@ -14,6 +19,8 @@
 
 <script>
 import MoleculeForm from '@/components/molecules/Form';
+import AtomConnector from '@/components/atoms/Connector';
+import MoleculeOverlay from '@/components/molecules/Overlay';
 import MoleculeFormCheckbox from '@/components/molecules/form/Checkbox';
 import MoleculeFormColorPicker from '@/components/molecules/form/ColorPicker';
 import MoleculeFormToggle from '@/components/molecules/form/Toggle';
@@ -26,6 +33,8 @@ import MoleculeFormRadialSlider from '@/components/molecules/form/RadialSlider';
 export default {
   components: {
     MoleculeForm,
+    AtomConnector,
+    MoleculeOverlay,
     MoleculeFormCheckbox,
     MoleculeFormColorPicker,
     MoleculeFormToggle,
