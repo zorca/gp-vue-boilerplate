@@ -136,6 +136,8 @@ export default {
         .pipe(...pipe)
         .subscribe(this.onEnd)
     ];
+    // console.log(this.reverse(100 / this.max, this.easing));
+    // console.log(rev(100 / this.max, this.easing));
   },
 
   destroyed () {
