@@ -4,7 +4,8 @@
       :start="{x: 100, y: 100}"
       :end="{x: 400, y: 200}"
     />
-    <molecule-overlay />
+    <molecule-form-overlay-radial-slider v-bind="form.radialSlider" />
+    <molecule-form-counter />
     <molecule-form-checkbox v-bind="form.checkbox" />
     <molecule-form-toggle v-bind="form.toggle" />
     <molecule-form-radiobox v-bind="form.radiobox" />
@@ -20,9 +21,10 @@
 <script>
 import MoleculeForm from '@/components/molecules/Form';
 import AtomConnector from '@/components/atoms/Connector';
-import MoleculeOverlay from '@/components/molecules/Overlay';
+import MoleculeFormOverlayRadialSlider from '@/components/molecules/form/overlay/RadialSlider';
 import MoleculeFormCheckbox from '@/components/molecules/form/Checkbox';
 import MoleculeFormColorPicker from '@/components/molecules/form/ColorPicker';
+import MoleculeFormCounter from '@/components/molecules/form/Counter';
 import MoleculeFormToggle from '@/components/molecules/form/Toggle';
 import MoleculeFormRadiobox from '@/components/molecules/form/Radiobox';
 import MoleculeFormSelectbox from '@/components/molecules/form/Selectbox';
@@ -34,9 +36,10 @@ export default {
   components: {
     MoleculeForm,
     AtomConnector,
-    MoleculeOverlay,
+    MoleculeFormOverlayRadialSlider,
     MoleculeFormCheckbox,
     MoleculeFormColorPicker,
+    MoleculeFormCounter,
     MoleculeFormToggle,
     MoleculeFormRadiobox,
     MoleculeFormSelectbox,

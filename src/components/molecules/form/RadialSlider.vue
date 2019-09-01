@@ -26,6 +26,7 @@
     <molecule-form-numeric
       class="numeric-input"
       :model="model"
+      :label="label"
       :min="min"
       :max="max"
     />
@@ -108,6 +109,7 @@ export default {
       return this.circumference / 2;
     },
     progress () {
+      console.log(this.model.value);
       return this.reverse(this.model.value / this.max);
     }
   },
@@ -136,8 +138,6 @@ export default {
         .pipe(...pipe)
         .subscribe(this.onEnd)
     ];
-    // console.log(this.reverse(100 / this.max, this.easing));
-    // console.log(rev(100 / this.max, this.easing));
   },
 
   destroyed () {
@@ -182,21 +182,18 @@ export default {
 </script>
 
 <style lang="postcss" scoped>
-span {
-  display: inline-block;
-}
-
 .radial-slider {
   --rad: 0;
+  --rotation: 0deg;
   --stroke-width: 5%;
   --handle-size: 20%;
   --translate: calc(var(--handle-size) / 2 - var(--stroke-width) / 2);
   --size: calc(100% - var(--handle-size) + var(--stroke-width));
 
-  position: relative;
+  display: inline-block;
   width: 100%;
   overflow: hidden;
-  transform: rotate(0deg);
+  transform: rotate(var(--rotation));
 
   &::before {
     display: block;
@@ -229,6 +226,7 @@ span {
     position: absolute;
     top: 0;
     left: 0;
+    display: inline-block;
     width: 100%;
     height: 100%;
     transform: rotate(calc(var(--rad) * 1rad)) translateX(var(--translate));
@@ -236,6 +234,7 @@ span {
     & .knob {
       position: relative;
       top: 50%;
+      display: inline-block;
       width: var(--handle-size);
       height: var(--handle-size);
       margin-left: calc(var(--stroke-width) / 2);
@@ -247,7 +246,9 @@ span {
 
   & .numeric-input {
     position: absolute;
-    top: 0;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(calc(var(--rotation) * -1));
   }
 }
 

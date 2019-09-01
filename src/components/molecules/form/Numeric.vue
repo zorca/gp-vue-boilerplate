@@ -4,6 +4,7 @@
     :message="message"
   >
     <template #input>
+      <slot name="before:gui" />
       <vue-numeric
         v-model="model.value"
         :min="min"
@@ -13,7 +14,7 @@
         :separator="separator"
         :precision="precision"
       />
-      <slot name="gui" />
+      <slot name="after:gui" />
     </template>
   </atom-label>
 </template>

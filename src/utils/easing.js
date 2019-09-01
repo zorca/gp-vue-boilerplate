@@ -1,38 +1,4 @@
-
-// function createReverseFormula (formula, scale) {
-//   const list = new Array(scale + 1).fill(0).map((_, i) => {
-//     const inp = i / scale;
-//     const out = formula(inp);
-//     return { inp, out };
-//   });
-
-//   return output => {
-//     const res = list.reduce(
-//       ({ distance, closest }, { inp, out }) => {
-//         const dist = Math.abs(output - out);
-//         if (dist < distance) {
-//           distance = dist;
-//           closest = inp;
-//         }
-//         return { distance, closest };
-//       },
-//       { distance: Number.POSITIVE_INFINITY }
-//     );
-//     return res.closest;
-//   };
-// }
-
-// function createMemoizedFormula (formula, scale) {
-//   const list = new Array(scale + 1).fill(0).map((_, i) => formula(i / scale));
-//   return output => list[Math.round(output * scale)];
-// }
-
-// export function reverse (formula, scale = 1000) {
-//   const reverse = createReverseFormula(formula, scale);
-//   return createMemoizedFormula(reverse, scale);
-// }
-
-function approximate (value, formula, min = 0, max = 1) {
+function approximate (value, formula, min, max, density) {
   if (value === 0 || value === 1) {
     return value;
   }
@@ -40,19 +6,33 @@ function approximate (value, formula, min = 0, max = 1) {
   const mid = (max - min) / 2 + min;
   const test = formula(mid);
 
-  if (Math.abs(test - value) < 0.00001) {
+  if (Math.abs(test - value) < density) {
     return mid;
   } else {
     if (test > value) {
-      return approximate(value, formula, min, mid);
+      return approximate(value, formula, min, mid, density);
     } else {
-      return approximate(value, formula, mid, max);
+      return approximate(value, formula, mid, max, density);
     }
   }
 }
 
-export function reverse (formula = linear, min = 0, max = 1) {
-  return (value) => approximate(value, formula, min, max);
+function createMemoizedFormula (formula, scale) {
+  const list = new Array(scale + 1).fill(undefined);
+  return output => {
+    const index = Math.round(output * scale);
+    let res = list[Number(index)];
+    if (res === undefined) {
+      res = formula(index / scale);
+      list[Number(index)] = res;
+    }
+    return res;
+  };
+}
+
+export function reverse (formula = linear, min = 0, max = 1, density = 0.00001) {
+  let fn = (value) => approximate(value, formula, min, max, density);
+  return createMemoizedFormula(fn, Math.round(1 / density));
 }
 
 export function linear (t) { return t; }

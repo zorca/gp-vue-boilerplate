@@ -5,6 +5,7 @@
     </lazy-hydrate>
     <main>
       <nuxt />
+      <ribble />
     </main>
     <lazy-hydrate when-visible>
       <page-footer :navigation="$t('footer.navigation')" />
@@ -16,7 +17,8 @@
 export default {
   components: {
     PageHeader: () => import(/* webpackMode: "eager" */'../components/page/Header'),
-    PageFooter: () => import(/* webpackMode: "eager" */'../components/page/Footer')
+    PageFooter: () => import(/* webpackMode: "eager" */'../components/page/Footer'),
+    Ribble: () => import(/* webpackMode: "eager" */'../components/atoms/Ribble')
   },
   head () {
     const pattern = {
