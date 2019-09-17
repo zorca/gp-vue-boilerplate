@@ -1,27 +1,45 @@
 <template>
   <div>
     <atom-connector
-      :start="{x: 100, y: 100}"
-      :end="{x: 400, y: 200}"
+      :start="start"
+      :end="screenCenter"
+      @end="showOverlay=true"
     />
     <transition
       appear
-      name="list"
+      name="open"
+      @after-enter="showContent=true;"
     >
       <div
+        v-if="showOverlay"
         class="container"
         :style="cssProps"
       >
-        <div class="inner-container">
-          <slot />
-        </div>
+        <transition
+          appear
+          name="content"
+        >
+          <div
+            v-if="showContent"
+            class="inner-container"
+          >
+            <slot />
+            <div
+              class="close"
+              @click="$emit('close')"
+            >
+              close
+            </div>
+          </div>
+        </transition>
       </div>
     </transition>
   </div>
 </template>
 
 <script>
-import { subscribeToViewport } from '@/service/viewport';
+import { Point } from '@js-basics/vector';
+import { getSize, subscribeToViewport } from '@/service/viewport';
 import AtomConnector from '@/components/atoms/Connector';
 
 export default {
@@ -31,13 +49,7 @@ export default {
 
   props: {
     start: {
-      type: Object,
-      default () {
-        return null;
-      }
-    },
-    end: {
-      type: Object,
+      type: Point,
       default () {
         return null;
       }
@@ -46,37 +58,33 @@ export default {
 
   data () {
     return {
-      size: '100vh',
-      innerWidth: '100vw',
-      innerHeight: '100vh'
+      size: `${Math.round(getSize().length / 2) * 2}px`,
+      screenCenter: getSize().calc(v => v / 2),
+      showOverlay: false,
+      showContent: false,
+      subscription: null
     };
   },
 
   computed: {
     cssProps () {
       return {
-        '--size': this.size,
-        '--inner-width': this.innerWidth,
-        '--inner-height': this.innerHeight
+        '--size': this.size
       };
     }
   },
 
   mounted () {
     global.document.documentElement.classList.add('freeze');
-
-    subscribeToViewport((e) => {
-      const result = Math.sqrt(e.x * e.x + e.y * e.y);
-      this.size = `${result}px`;
-      this.innerWidth = `${e.x}px`;
-      this.innerHeight = `${e.y}px`;
+    this.subscription = subscribeToViewport((e) => {
+      this.size = `${Math.round(e.length / 2) * 2}px`;
+      this.screenCenter = e.calc((v) => v / 2);
     });
   },
 
-  methods: {
-    onShow () {
-      console.log('e');
-    }
+  destroyed () {
+    global.document.documentElement.classList.remove('freeze');
+    this.subscription.unsubscribe();
   }
 };
 </script>
@@ -95,6 +103,20 @@ div.container {
   transition-property: transform;
   transform: translate(-50%, -50%) scale(1);
   transform-origin: 50%;
+  backdrop-filter: blur(10px);
+
+  &.open-enter-active {
+    transition-duration: 350ms;
+  }
+
+  &.open-leave-active {
+    transition-duration: 350ms;
+  }
+
+  &.open-enter,
+  &.open-leave-to {
+    transform: translate(-50%, -50%) scale(0);
+  }
 
   & div.inner-container {
     position: absolute;
@@ -102,22 +124,27 @@ div.container {
     right: 0;
     bottom: 0;
     left: 0;
-    width: var(--inner-width);
-    height: var(--inner-height);
+    width: 100vw;
+    height: 100vh;
     margin: auto;
-  }
+    opacity: 1;
+    transition-timing-function: ease-in;
+    transition-property: opacity;
 
-  &.list-enter-active {
-    transition-duration: 350ms;
-  }
+    &.content-enter-active {
+      transition-duration: 350ms;
+    }
 
-  &.list-leave-active {
-    transition-duration: 350ms;
-  }
+    &.content-enter,
+    &.content-leave-to {
+      opacity: 0;
+    }
 
-  &.list-enter,
-  &.list-leave-to {
-    transform: translate(-50%, -50%) scale(0);
+    & .close {
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
   }
 }
 </style>

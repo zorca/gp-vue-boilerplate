@@ -7,6 +7,7 @@
       <slot name="before:gui" />
       <vue-numeric
         v-model="model.value"
+        :disabled="disabled"
         :min="min"
         :max="max"
         :currency="unit"
@@ -40,6 +41,12 @@ export default {
       type: Object,
       default () {
         return {};
+      }
+    },
+    disabled: {
+      type: Boolean,
+      default () {
+        return false;
       }
     },
     min: {
@@ -109,6 +116,7 @@ export default {
 
 <style lang="postcss" scoped>
 input {
+  width: 100%;
   text-align: right;
 }
 </style>

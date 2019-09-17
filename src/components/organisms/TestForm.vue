@@ -1,10 +1,6 @@
 <template>
   <molecule-form :data="form">
-    <atom-connector
-      :start="{x: 100, y: 100}"
-      :end="{x: 400, y: 200}"
-    />
-    <molecule-form-overlay-radial-slider v-bind="form.radialSlider" />
+    <molecule-form-overlay-radial-slider v-bind="form.radialSliderA" />
     <molecule-form-counter />
     <molecule-form-checkbox v-bind="form.checkbox" />
     <molecule-form-toggle v-bind="form.toggle" />
@@ -12,17 +8,17 @@
     <molecule-form-selectbox v-bind="form.selectbox" />
     <molecule-form-numeric v-bind="form.numericA" />
     <molecule-form-numeric v-bind="form.numericB" />
-
+    <molecule-form-color-range />
     <molecule-form-color-picker />
-    <molecule-form-radial-slider v-bind="form.radialSlider" />
+    <molecule-form-radial-slider v-bind="form.radialSliderB" />
   </molecule-form>
 </template>
 
 <script>
 import MoleculeForm from '@/components/molecules/Form';
-import AtomConnector from '@/components/atoms/Connector';
 import MoleculeFormOverlayRadialSlider from '@/components/molecules/form/overlay/RadialSlider';
 import MoleculeFormCheckbox from '@/components/molecules/form/Checkbox';
+import MoleculeFormColorRange from '@/components/molecules/form/ColorRange';
 import MoleculeFormColorPicker from '@/components/molecules/form/ColorPicker';
 import MoleculeFormCounter from '@/components/molecules/form/Counter';
 import MoleculeFormToggle from '@/components/molecules/form/Toggle';
@@ -35,9 +31,9 @@ import MoleculeFormRadialSlider from '@/components/molecules/form/RadialSlider';
 export default {
   components: {
     MoleculeForm,
-    AtomConnector,
     MoleculeFormOverlayRadialSlider,
     MoleculeFormCheckbox,
+    MoleculeFormColorRange,
     MoleculeFormColorPicker,
     MoleculeFormCounter,
     MoleculeFormToggle,
@@ -115,7 +111,7 @@ export default {
             value: ''
           }
         },
-        radialSlider: {
+        radialSliderA: {
           label: 'RADIAL SLIDER',
           mask: { alias: 'meter', clearMaskOnLostFocus: false, min: 0, max: 100 },
           model: {
@@ -123,6 +119,14 @@ export default {
             value: 0
           }
         },
+        radialSliderB: {
+          label: 'RADIAL SLIDER',
+          mask: { alias: 'meter', clearMaskOnLostFocus: false, min: 0, max: 100 },
+          model: {
+            name: 'radialB',
+            value: 0
+          }
+        }
       }
     };
   }

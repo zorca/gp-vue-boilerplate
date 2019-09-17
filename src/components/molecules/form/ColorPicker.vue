@@ -6,10 +6,10 @@
       :height="height"
       @click="click"
     />
-    <span
+    <!-- <span
       ref="color"
       class="color"
-    />
+    /> -->
   </div>
 </template>
 
@@ -24,7 +24,8 @@ export default {
       context: null,
       width: 0,
       height: 0,
-      center: null
+      center: null,
+      size: 300
     };
   },
 
@@ -36,8 +37,15 @@ export default {
     this.center = new Victor(this.width / 2, this.height / 2);
 
     this.$nextTick(() => {
-      drawColorWheel(this.context, this.center);
-      punchOutArc(this.context, this.center, this.center.x * 0.33);
+      const steps = 5;
+      const combine = 7;
+
+      for (let i = 0; i < steps; i++) {
+        const radius = 1 - i / steps;
+        const lightness = (i + 1) / (steps + 1) * 100;
+        const parts = Math.pow(combine, (steps + 1) / 2 - Math.abs(i - (steps - 1) / 2));
+        drawColorWheel(this.context, this.center, this.center.x * radius, parts, lightness);
+      }
     });
   },
 
@@ -51,23 +59,22 @@ export default {
       ] = data;
 
       if (alpha === 255) {
-        this.$refs.color.style.backgroundColor = color.to.rgb(data);
+        // this.$refs.color.style.backgroundColor = color.to.rgb(data);
+        console.log(color.to.rgb(data));
       }
     }
   }
 };
 
-function drawColorWheel (context, point, radius = point.x) {
-  for (var angle = 0; angle <= 360; angle += 1) {
-    var startAngle = (angle - 2) * Math.PI / 180;
-    var endAngle = angle * Math.PI / 180;
-    drawArc(context, point, radius, startAngle, endAngle, 'hsl(' + angle + ', 100%, 50%)');
-  }
-}
+function drawColorWheel (context, point, radius = point.x, parts = 360, lightness) {
+  for (var angle = 0; angle <= Math.PI * 2; angle += Math.PI * 2 / parts) {
+    const startAngle = angle;
+    const midAngle = angle + (Math.PI * 2 / parts) * 0.5;
+    const endAngle = angle + (Math.PI * 2 / parts) * 1;
 
-function punchOutArc (context, point, radius = point.x) {
-  context.globalCompositeOperation = 'destination-out';
-  drawArc(context, point, radius, 0, 2 * Math.PI);
+    const color = `hsl(${midAngle}rad, 100%, ${lightness}%)`;
+    drawArc(context, point, radius - 0.5, startAngle, endAngle, color);
+  }
 }
 
 function drawArc (context, point, radius, startAngle, endAngle, fillStyle = null) {
@@ -77,6 +84,9 @@ function drawArc (context, point, radius, startAngle, endAngle, fillStyle = null
   context.closePath();
   context.fillStyle = fillStyle;
   context.fill();
+  context.strokeStyle = fillStyle;
+  context.lineWidth = 0;
+  context.stroke();
 }
 </script>
 

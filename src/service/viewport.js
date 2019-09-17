@@ -1,5 +1,6 @@
 import { fromEvent, timer } from 'rxjs';
 import { debounce, map, startWith, share } from 'rxjs/operators';
+import { Point } from '@js-basics/vector';
 
 const w = global || {};
 const d = w.document || {};
@@ -16,11 +17,11 @@ const observer = fromEvent(global, 'resize').pipe(
 );
 
 export function subscribeToViewport (fn) {
-  observer.pipe(startWith(getSize())).subscribe(value => fn(value));
+  return observer.pipe(startWith(getSize())).subscribe(value => fn(value));
 }
 
-function getSize () {
-  return { x: getX(), y: getY() };
+export function getSize () {
+  return new Point(getX(), getY());
 }
 
 function getX () {

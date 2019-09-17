@@ -3,6 +3,7 @@
     class="radial-slider"
     :class="[{ 'transition-active': !active }]"
     touch-action="none"
+    :style="rad"
   >
     <atom-circle
       class="indicator"
@@ -109,19 +110,12 @@ export default {
       return this.circumference / 2;
     },
     progress () {
-      console.log(this.model.value);
       return this.reverse(this.model.value / this.max);
-    }
-  },
-
-  watch: {
-    'model.value': {
-      handler () {
-        this.$el.style.setProperty(
-          '--rad',
-          this.progress * 2 * Math.PI * this.range
-        );
-      }
+    },
+    rad () {
+      return {
+        '--rad': this.progress * 2 * Math.PI * this.range
+      };
     }
   },
 
@@ -213,6 +207,7 @@ export default {
 
     &.progress >>> circle {
       stroke: #0f0;
+      stroke-linecap: round;
       stroke-width: var(--stroke-width);
     }
 
@@ -238,8 +233,9 @@ export default {
       width: var(--handle-size);
       height: var(--handle-size);
       margin-left: calc(var(--stroke-width) / 2);
-      border: 1px solid black;
+      border: 5px solid white;
       border-radius: 50%;
+      box-shadow: inset 0 0 5px black;
       transform: translate(-50%, -50%);
     }
   }

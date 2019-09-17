@@ -1,16 +1,22 @@
 <template>
   <div class="radial-slider-overlay">
-    <molecule-overlay v-if="show">
+    <molecule-overlay
+      v-if="start"
+      :start="start"
+      @close="start = null"
+    >
       <molecule-form-radial-slider :model="model" />
     </molecule-overlay>
     <molecule-form-numeric
       :model="model"
+      disabled
       @click.native="onClick"
     />
   </div>
 </template>
 
 <script>
+import { Point } from '@js-basics/vector';
 import MoleculeOverlay from '@/components/molecules/Overlay';
 import MoleculeFormRadialSlider from '@/components/molecules/form/RadialSlider';
 import MoleculeFormNumeric from '@/components/molecules/form/Numeric';
@@ -33,23 +39,13 @@ export default {
 
   data () {
     return {
-      show: false
+      start: null
     };
-  },
-
-  mounted () {
-    // setTimeout(() => {
-    //   this.show = true;
-    // }, 3000);
-    // setTimeout(() => {
-    //   this.show = false;
-    // }, 6000);
   },
 
   methods: {
     onClick (e) {
-      console.log('AHA', e);
-      this.show = true;
+      this.start = new Point(e.x, e.y);
     }
   }
 };

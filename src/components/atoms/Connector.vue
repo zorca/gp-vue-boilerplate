@@ -1,152 +1,135 @@
 <template>
-  <svg
-    :class="{animate: active}"
-    :width="width"
-    :height="height"
-    :viewBox="`0 0 ${width} ${height}`"
-  >
-    <circle
-      class="start"
-      fill="black"
-      :cx="radius"
-      :cy="radius"
-      :r="radius"
-    />
-    <path
-      ref="path"
-      :d="`
-        M${offsetLeft} ${offsetTop}
-        L${Math.max(offsetWidth - offsetHeight, offsetLeft)} ${Math.max(offsetHeight - offsetWidth, offsetTop) }
-        L${offsetWidth} ${offsetHeight}
-      `"
-      :stroke-width="strokeWidth"
-      :stroke-dasharray="strokeDasharray"
-      :stroke-dashoffset="strokeDashoffset"
-      stroke="black"
-      fill="none"
-      vector-effect="non-scaling-stroke"
-    />
-
-    <circle
-      class="end"
-      fill="black"
-      :cx="offsetWidth"
-      :cy="offsetHeight"
-      :r="radius"
-    />
-  </svg>
+  <div :style="cssProps">
+    <transition
+      appear
+      name="flicker"
+      @after-enter="showDashoffset=true;"
+    >
+      <div class="indicator" />
+    </transition>
+    <svg
+      :width="size.x"
+      :height="size.y"
+      :viewBox="viewBox"
+    >
+      <transition
+        appear
+        name="dashoffset"
+        @after-enter="$emit('end')"
+      >
+        <path
+          v-if="showDashoffset"
+          :d="`
+          M${0.5} ${0.5}
+          L${Math.max(size.x - size.y, 0.5)} ${Math.max(size.y - size.x, 0.5) }
+          L${size.x} ${size.y}
+        `"
+          pathLength="100"
+        />
+      </transition>
+    </svg>
+  </div>
 </template>
 
 <script>
+import { Point } from '@js-basics/vector';
+
 export default {
   props: {
     start: {
-      type: Object,
+      type: Point,
       default () {
-        return { x: 0, y: 0 };
+        return null;
       }
     },
     end: {
-      type: Object,
+      type: Point,
       default () {
-        return { x: 0, y: 0 };
-      }
-    },
-    radius: {
-      type: Number,
-      default () {
-        return 5;
-      }
-    },
-    strokeWidth: {
-      type: Number,
-      default () {
-        return 1;
+        return null;
       }
     }
   },
 
   data () {
     return {
-      active: false
+      radius: 0,
+      showDashoffset: false
     };
   },
 
   computed: {
-    length () {
-      const h = this.offsetHeight - this.radius;
-      const w = this.offsetWidth - this.radius;
-      const a = Math.min(h, w);
-      return Math.max(this.offsetWidth - this.offsetHeight, this.offsetHeight - this.offsetWidth) + Math.hypot(a, a);
+    size () {
+      return this.end.calc(v => Math.abs(v - this.start));
     },
-    width () {
-      return this.end.x - this.start.x;
+    viewBox () {
+      return `0 0 ${this.size.x} ${this.size.y}`;
     },
-    height () {
-      return this.end.y - this.start.y;
-    },
-    offsetTop () {
-      return this.radius;
-    },
-    offsetLeft () {
-      return this.radius;
-    },
-    offsetWidth () {
-      return this.width - this.radius * 2;
-    },
-    offsetHeight () {
-      return this.height - this.radius * 2;
-    },
-    strokeDasharray () {
-      return `${this.length} ${this.length}`;
-    },
-    strokeDashoffset () {
-      return this.length;
+    cssProps () {
+      return {
+        top: `${this.start.y}px`,
+        left: `${this.start.x}px`,
+        transform: this.getRotation()
+      };
     }
   },
 
   mounted () {
-    setTimeout(() => {
-      this.active = true;
-    }, 1000);
+    this.radius = Number(global.getComputedStyle(this.$el).getPropertyValue('--radius'));
+  },
+
+  methods: {
+    getRotation () {
+      let style = [];
+      if (this.start.x > this.end.x) {
+        style.push('translateX(calc(-100%)) rotateY(180deg)');
+      }
+      if (this.start.y > this.end.y) {
+        style.push('translateY(-100%) rotateX(180deg)');
+      }
+      return style.join(' ');
+    }
   }
 };
 </script>
 
 <style lang="postcss" scoped>
-svg {
-  & .start {
-    opacity: 0;
-  }
+div {
+  --color: black;
+  --radius: 5;
 
-  & .end {
-    opacity: 0;
-    transition-delay: 750ms;
-    transition-property: opacity;
-  }
+  position: fixed;
 
-  & path {
-    transition-delay: 500ms;
-    transition-duration: 250ms;
-    transition-property: stroke-dashoffset;
-  }
+  & div.indicator {
+    width: 10px;
+    height: 10px;
+    background: var(--color);
+    transform: translate(-50%, -50%);
 
-  &.animate {
-    & .start {
-      animation: border-flicker 250ms linear forwards;
+    &.flicker-enter-active {
+      animation-name: flicker;
+      animation-duration: 350ms;
     }
+  }
 
-    & .end {
-      opacity: 1;
-    }
-
+  & svg {
     & path {
+      fill: none;
+      stroke: var(--color);
+      stroke-dasharray: 100 100;
       stroke-dashoffset: 0;
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+      transition-duration: 350ms;
+      transition-property: stroke-dashoffset;
+    }
+
+    & .dashoffset-enter {
+      stroke-dashoffset: 100;
     }
   }
 }
 
-@keyframes border-flicker {
+@keyframes flicker {
   0% {
     opacity: 0.1;
   }
