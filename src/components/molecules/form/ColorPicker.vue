@@ -2,8 +2,8 @@
   <div class="color-picker">
     <canvas
       ref="canvas"
-      :width="width"
-      :height="height"
+      :width="dimension.x"
+      :height="dimension.y"
       @click="click"
     />
     <!-- <span
@@ -15,78 +15,138 @@
 
 <script>
 import { getNormalizedPointer } from '@/utils/pointer';
-import { Victor } from '@js-basics/vector';
-import color from 'color-string';
+import { point } from '@js-basics/vector';
+import { subscribeToViewport } from '@/service/viewport';
+import Color from 'color';
 
 export default {
+  props: {
+    segments: {
+      type: Number,
+      default () {
+        return 7;
+      }
+    },
+    sections: {
+      type: Number,
+      default () {
+        return 5;
+      }
+    },
+    alignmentRad: {
+      type: Number,
+      default () {
+        return 0; // Math.PI
+      }
+    }
+  },
+
   data () {
     return {
       context: null,
-      width: 0,
-      height: 0,
-      center: null,
-      size: 300
+      dimension: point(),
+      center: point(),
+      paths: []
     };
   },
 
   mounted () {
-    const style = window.getComputedStyle(this.$refs.canvas);
-    this.width = parseInt(style.width);
-    this.height = parseInt(style.height);
     this.context = this.$refs.canvas.getContext('2d');
-    this.center = new Victor(this.width / 2, this.height / 2);
+    this.prepare();
+    this.subscriptions = [
+      subscribeToViewport(this.onResize)
+    ];
+  },
 
-    this.$nextTick(() => {
-      const steps = 5;
-      const combine = 7;
-
-      for (let i = 0; i < steps; i++) {
-        const radius = 1 - i / steps;
-        const lightness = (i + 1) / (steps + 1) * 100;
-        const parts = Math.pow(combine, (steps + 1) / 2 - Math.abs(i - (steps - 1) / 2));
-        drawColorWheel(this.context, this.center, this.center.x * radius, parts, lightness);
-      }
+  destroyed () {
+    this.subscriptions.forEach(item => {
+      item.unsubscribe();
     });
   },
 
   methods: {
     click (e) {
       const normVector = getNormalizedPointer(e, this.$refs.canvas.getBoundingClientRect());
-      const vector = new Victor(() => normVector * this.center + this.center);
+      const vector = point(() => normVector * this.center + this.center);
       const data = this.context.getImageData(vector.x, vector.y, 1, 1).data;
       const [
         , , , alpha
       ] = data;
 
-      if (alpha === 255) {
+      if (alpha !== 0) {
         // this.$refs.color.style.backgroundColor = color.to.rgb(data);
-        console.log(color.to.rgb(data));
+        console.log(Color(data).toString());
       }
+    },
+
+    onResize () {
+      const style = global.getComputedStyle(this.$refs.canvas);
+      this.dimension = point(parseInt(style.width), parseInt(style.height));
+      this.center = point(() => this.dimension / 2);
+      this.$nextTick(this.draw);
+    },
+
+    prepare () {
+      for (let i = 0; i < this.sections; i++) {
+        const outerRadius = (1 - i / this.sections) / 2;
+        const innerRadius = (1 - (i + 1) / this.sections) / 2;
+        const lightness = (i + 1) / (this.sections + 1) * 100;
+        // calc number of segments per donut
+        const segments = Math.pow(this.segments, (this.sections + 1) / 2 - Math.abs(i - (this.sections - 1) / 2));
+        this.paths.push(getPathSegments(this.context, outerRadius, innerRadius, this.alignmentRad, segments, lightness));
+      }
+    },
+
+    draw () {
+      setupCanvas(this.context);
+      this.paths.forEach((section) => {
+        section.forEach((segment) => {
+          drawPathSegment(this.context, segment.path, segment.color);
+        });
+      });
     }
   }
 };
 
-function drawColorWheel (context, point, radius = point.x, parts = 360, lightness) {
-  for (var angle = 0; angle <= Math.PI * 2; angle += Math.PI * 2 / parts) {
-    const startAngle = angle;
-    const midAngle = angle + (Math.PI * 2 / parts) * 0.5;
-    const endAngle = angle + (Math.PI * 2 / parts) * 1;
-
-    const color = `hsl(${midAngle}rad, 100%, ${lightness}%)`;
-    drawArc(context, point, radius - 0.5, startAngle, endAngle, color);
+function getPathSegments (context, outerRadius = 0.5, innerRadius = 0, alignmentRad = 0, segments = 360, lightness = 50) {
+  const pathSegments = [];
+  for (let startAngle = alignmentRad; startAngle <= Math.PI * 2 + alignmentRad; startAngle += Math.PI * 2 / segments) {
+    const midAngle = startAngle + (Math.PI * 2 / segments) * 0.5;
+    const endAngle = startAngle + (Math.PI * 2 / segments) * 1;
+    pathSegments.push({
+      path: getPathSegment(context, outerRadius, innerRadius, startAngle, endAngle),
+      color: Color.hsl(midAngle * (180 / Math.PI), 100, lightness).toString()
+    });
   }
+  return pathSegments;
 }
 
-function drawArc (context, point, radius, startAngle, endAngle, fillStyle = null) {
-  context.beginPath();
-  context.moveTo(point.x, point.y);
-  context.arc(point.x, point.y, radius, startAngle, endAngle, false);
-  context.closePath();
+function getPathSegment (context, outerRadius, innerRadius, startAngle, endAngle) {
+  const path = new Path2D();
+  path.arc(0, 0, outerRadius, startAngle, endAngle, false);
+  path.arc(0, 0, innerRadius, endAngle, startAngle, true);
+  path.closePath();
+  return path;
+}
+
+function setupCanvas (context) {
+  const { width, height } = context.canvas;
+  const scale = point(width, height);
+  const translation = point(() => scale / 2);
+
+  context.translate(...translation.toArray());
+  context.scale(...scale.toArray());
+  context.arc(0, 0, 0.5, 0, 2 * Math.PI);
+  context.clip();
+}
+
+function drawPathSegment (context, path, fillStyle = null) {
   context.fillStyle = fillStyle;
-  context.fill();
   context.strokeStyle = fillStyle;
-  context.lineWidth = 0;
-  context.stroke();
+  context.lineWidth = 1 / context.canvas.width;
+  context.stroke(path);
+  context.fill(path);
+
 }
 </script>
 
