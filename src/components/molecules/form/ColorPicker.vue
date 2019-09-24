@@ -4,7 +4,7 @@
       ref="canvas"
       :width="dimension.x"
       :height="dimension.y"
-      @click="click"
+      @click="onClick"
     />
     <!-- <span
       ref="color"
@@ -36,7 +36,7 @@ export default {
     alignmentRad: {
       type: Number,
       default () {
-        return 0; // Math.PI
+        return Math.PI * 0;
       }
     }
   },
@@ -45,12 +45,12 @@ export default {
     return {
       context: null,
       dimension: point(),
-      center: point(),
       paths: []
     };
   },
 
   mounted () {
+    console.log();
     this.context = this.$refs.canvas.getContext('2d');
     this.prepare();
     this.subscriptions = [
@@ -65,9 +65,9 @@ export default {
   },
 
   methods: {
-    click (e) {
+    onClick (e) {
       const normVector = getNormalizedPointer(e, this.$refs.canvas.getBoundingClientRect());
-      const vector = point(() => normVector * this.center + this.center);
+      const vector = point(() => normVector * (this.dimension / 2) + (this.dimension / 2));
       const data = this.context.getImageData(vector.x, vector.y, 1, 1).data;
       const [
         , , , alpha
@@ -82,49 +82,54 @@ export default {
     onResize () {
       const style = global.getComputedStyle(this.$refs.canvas);
       this.dimension = point(parseInt(style.width), parseInt(style.height));
-      this.center = point(() => this.dimension / 2);
       this.$nextTick(this.draw);
     },
 
     prepare () {
-      for (let i = 0; i < this.sections; i++) {
-        const outerRadius = (1 - i / this.sections) / 2;
-        const innerRadius = (1 - (i + 1) / this.sections) / 2;
-        const lightness = (i + 1) / (this.sections + 1) * 100;
-        // calc number of segments per donut
-        const segments = Math.pow(this.segments, (this.sections + 1) / 2 - Math.abs(i - (this.sections - 1) / 2));
-        this.paths.push(getPathSegments(this.context, outerRadius, innerRadius, this.alignmentRad, segments, lightness));
-      }
+      const paths = Array(this.sections).fill(null);
+      this.paths = paths.map((value, currentSection, array) => {
+        const numSections = array.length;
+        const outerRadius = (1 - currentSection / numSections) / 2;
+        const innerRadius = (1 - (currentSection + 1) / numSections) / 2;
+        const lightness = (currentSection + 1) / (numSections + 1) * 100;
+        const numSegments = getNumberOfSegmentsBySection(this.segments, currentSection, numSections);
+        return getPathSegments(this.context, outerRadius, innerRadius, this.alignmentRad, numSegments, lightness);
+      });
     },
 
     draw () {
       setupCanvas(this.context);
       this.paths.forEach((section) => {
         section.forEach((segment) => {
-          drawPathSegment(this.context, segment.path, segment.color);
+          drawPathSegment(this.context, segment);
         });
       });
     }
   }
 };
 
-function getPathSegments (context, outerRadius = 0.5, innerRadius = 0, alignmentRad = 0, segments = 360, lightness = 50) {
-  const pathSegments = [];
-  for (let startAngle = alignmentRad; startAngle <= Math.PI * 2 + alignmentRad; startAngle += Math.PI * 2 / segments) {
-    const midAngle = startAngle + (Math.PI * 2 / segments) * 0.5;
-    const endAngle = startAngle + (Math.PI * 2 / segments) * 1;
-    pathSegments.push({
-      path: getPathSegment(context, outerRadius, innerRadius, startAngle, endAngle),
-      color: Color.hsl(midAngle * (180 / Math.PI), 100, lightness).toString()
-    });
-  }
-  return pathSegments;
+function getNumberOfSegmentsBySection (numSegments, currentSection, numSections) {
+  return Math.pow(numSegments, (numSections + 1) / 2 - Math.abs(currentSection - (numSections - 1) / 2));
 }
 
-function getPathSegment (context, outerRadius, innerRadius, startAngle, endAngle) {
+function getPathSegments (context, outerRadius = 0.5, innerRadius = 0, alignmentRad = 0, segments = 360, lightness = 50) {
+  const pathSegments = Array(segments).fill(null);
+  return pathSegments.map((value, index) => {
+    const rad = getSegmentRad(segments);
+    const startRad = rad * index;
+    const midRad = startRad + rad * 0.5;
+    const endRad = startRad + rad * 1;
+    return {
+      path: getPath(context, outerRadius, innerRadius, startRad, endRad),
+      color: Color.hsl(radToDeg(midRad + alignmentRad), 100, lightness).toString()
+    };
+  });
+}
+
+function getPath (context, outerRadius, innerRadius, startRad, endRad) {
   const path = new Path2D();
-  path.arc(0, 0, outerRadius, startAngle, endAngle, false);
-  path.arc(0, 0, innerRadius, endAngle, startAngle, true);
+  path.arc(0, 0, outerRadius, startRad, endRad, false);
+  path.arc(0, 0, innerRadius, endRad, startRad, true);
   path.closePath();
   return path;
 }
@@ -132,21 +137,27 @@ function getPathSegment (context, outerRadius, innerRadius, startAngle, endAngle
 function setupCanvas (context) {
   const { width, height } = context.canvas;
   const scale = point(width, height);
-  const translation = point(() => scale / 2);
 
-  context.translate(...translation.toArray());
   context.scale(...scale.toArray());
+  context.translate(0.5, 0.5);
   context.arc(0, 0, 0.5, 0, 2 * Math.PI);
   context.clip();
 }
 
-function drawPathSegment (context, path, fillStyle = null) {
-  context.fillStyle = fillStyle;
-  context.strokeStyle = fillStyle;
+function drawPathSegment (context, segment) {
+  context.fillStyle = segment.color;
+  context.strokeStyle = segment.color;
   context.lineWidth = 1 / context.canvas.width;
-  context.stroke(path);
-  context.fill(path);
+  context.stroke(segment.path);
+  context.fill(segment.path);
+}
 
+function getSegmentRad (segments) {
+  return Math.PI * 2 / segments;
+}
+
+function radToDeg (rad) {
+  return rad * (180 / Math.PI);
 }
 </script>
 
