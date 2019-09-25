@@ -1,9 +1,8 @@
 <template>
   <div class="color-picker">
-    <canvas
-      ref="canvas"
-      :width="dimension.x"
-      :height="dimension.y"
+    <atom-canvas
+      :segments="sectionSegments"
+      :clip-path="clipPath"
       @click="onClick"
     />
     <!-- <span
@@ -14,12 +13,14 @@
 </template>
 
 <script>
-import { getNormalizedPointer } from '@/utils/pointer';
-import { point } from '@js-basics/vector';
-import { subscribeToViewport } from '@/service/viewport';
+import AtomCanvas from '@/components/atoms/Canvas';
 import Color from 'color';
 
 export default {
+  components: {
+    AtomCanvas
+  },
+
   props: {
     segments: {
       type: Number,
@@ -43,66 +44,34 @@ export default {
 
   data () {
     return {
-      context: null,
-      dimension: point(),
-      paths: []
+      sectionSegments: [],
+      clipPath: null
     };
   },
 
   mounted () {
-    console.log();
-    this.context = this.$refs.canvas.getContext('2d');
     this.prepare();
-    this.subscriptions = [
-      subscribeToViewport(this.onResize)
-    ];
-  },
-
-  destroyed () {
-    this.subscriptions.forEach(item => {
-      item.unsubscribe();
-    });
   },
 
   methods: {
     onClick (e) {
-      const normVector = getNormalizedPointer(e, this.$refs.canvas.getBoundingClientRect());
-      const vector = point(() => normVector * (this.dimension / 2) + (this.dimension / 2));
-      const data = this.context.getImageData(vector.x, vector.y, 1, 1).data;
       const [
         , , , alpha
-      ] = data;
-
+      ] = e;
       if (alpha !== 0) {
-        // this.$refs.color.style.backgroundColor = color.to.rgb(data);
-        console.log(Color(data).toString());
+        console.log(Color(e).toString());
       }
     },
 
-    onResize () {
-      const style = global.getComputedStyle(this.$refs.canvas);
-      this.dimension = point(parseInt(style.width), parseInt(style.height));
-      this.$nextTick(this.draw);
-    },
-
     prepare () {
-      const paths = Array(this.sections).fill(null);
-      this.paths = paths.map((value, currentSection, array) => {
+      this.clipPath = getClipPath();
+      this.sectionSegments = Array(this.sections).fill(null).map((value, currentSection, array) => {
         const numSections = array.length;
         const outerRadius = (1 - currentSection / numSections) / 2;
         const innerRadius = (1 - (currentSection + 1) / numSections) / 2;
         const lightness = (currentSection + 1) / (numSections + 1) * 100;
         const numSegments = getNumberOfSegmentsBySection(this.segments, currentSection, numSections);
-        return getPathSegments(this.context, outerRadius, innerRadius, this.alignmentRad, numSegments, lightness);
-      });
-    },
-
-    draw () {
-      setupCanvas(this.context);
-      this.paths.forEach((section) => {
-        section.forEach((segment) => {
-          drawPathSegment(this.context, segment);
-        });
+        return getSegments(this.context, outerRadius, innerRadius, this.alignmentRad, numSegments, lightness);
       });
     }
   }
@@ -112,9 +81,8 @@ function getNumberOfSegmentsBySection (numSegments, currentSection, numSections)
   return Math.pow(numSegments, (numSections + 1) / 2 - Math.abs(currentSection - (numSections - 1) / 2));
 }
 
-function getPathSegments (context, outerRadius = 0.5, innerRadius = 0, alignmentRad = 0, segments = 360, lightness = 50) {
-  const pathSegments = Array(segments).fill(null);
-  return pathSegments.map((value, index) => {
+function getSegments (context, outerRadius = 0.5, innerRadius = 0, alignmentRad = 0, segments = 360, lightness = 50) {
+  return Array(segments).fill(null).map((value, index) => {
     const rad = getSegmentRad(segments);
     const startRad = rad * index;
     const midRad = startRad + rad * 0.5;
@@ -134,22 +102,10 @@ function getPath (context, outerRadius, innerRadius, startRad, endRad) {
   return path;
 }
 
-function setupCanvas (context) {
-  const { width, height } = context.canvas;
-  const scale = point(width, height);
-
-  context.scale(...scale.toArray());
-  context.translate(0.5, 0.5);
-  context.arc(0, 0, 0.5, 0, 2 * Math.PI);
-  context.clip();
-}
-
-function drawPathSegment (context, segment) {
-  context.fillStyle = segment.color;
-  context.strokeStyle = segment.color;
-  context.lineWidth = 1 / context.canvas.width;
-  context.stroke(segment.path);
-  context.fill(segment.path);
+function getClipPath () {
+  const path = new Path2D();
+  path.arc(0, 0, 0.5, 0, 2 * Math.PI);
+  return path;
 }
 
 function getSegmentRad (segments) {

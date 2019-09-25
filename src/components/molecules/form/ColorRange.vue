@@ -1,16 +1,16 @@
 <template>
   <div
-    :class="['color-range', direction.x ? 'vertical' : 'horizontal']"
+    :class="['color-range', orientation.x ? 'vertical' : 'horizontal']"
     :style="cssProps"
   >
-    <canvas
-      ref="canvas"
-      :width="dimension.x"
-      :height="dimension.y"
-      @pointerdown="onStart"
+    <atom-canvas
+      :segments="segments"
+      :rotation="orientation"
+      @pointerdown.native="onStart"
+      @resize="onResize"
     />
     <span class="container">
-      <span class="selector">
+      <span class="handle">
         <svg viewBox="0 0 1 1" />
       </span>
     </span>
@@ -19,13 +19,17 @@
 
 <script>
 import Color from 'color';
+import AtomCanvas from '@/components/atoms/Canvas';
 import { getNormalizedPointer } from '@/utils/pointer';
 import { point } from '@js-basics/vector';
-import { subscribeToViewport } from '@/service/viewport';
 import { fromEvent } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
 export default {
+  components: {
+    AtomCanvas
+  },
+
   props: {
     parts: {
       type: Number,
@@ -43,10 +47,9 @@ export default {
 
   data () {
     return {
-      context: null,
-      pos: point(),
-      dimension: point(),
-      direction: point(1, 0)
+      handlePosition: point(),
+      orientation: point(1, 0),
+      segments: []
     };
   },
 
@@ -54,14 +57,15 @@ export default {
     cssProps () {
       return {
         '--size': `${1 / this.parts * 100}%`,
-        '--x': `${this.pos.x * this.parts}%`,
-        '--y': `${this.pos.y * this.parts}%`
+        '--x': `${this.handlePosition.x * this.parts}%`,
+        '--y': `${this.handlePosition.y * this.parts}%`
       };
     }
   },
 
   mounted () {
-    this.context = this.$refs.canvas.getContext('2d');
+    this.prepare(this.parts, this.hex);
+
     const options = { passive: true, capture: false };
     const pipe = [
       filter(() => this.active)
@@ -72,8 +76,7 @@ export default {
         .subscribe(this.onTick),
       fromEvent(global.document, 'pointerup', options)
         .pipe(...pipe)
-        .subscribe(this.onEnd),
-      subscribeToViewport(this.onResize)
+        .subscribe(this.onEnd)
     ];
   },
 
@@ -84,10 +87,8 @@ export default {
   },
 
   methods: {
-    onResize () {
-      const style = global.getComputedStyle(this.$refs.canvas);
-      this.dimension = point(parseInt(style.width), parseInt(style.height));
-      this.$nextTick(this.draw);
+    prepare (parts, hex) {
+      this.segments = getSegments(parts, hex);
     },
 
     onStart (e) {
@@ -96,8 +97,8 @@ export default {
     },
 
     onTick (e) {
-      const normVector = getNormalizedPointer(e, this.$refs.canvas.getBoundingClientRect());
-      this.pos = point(normVector.x, normVector.y)
+      const normVector = getNormalizedPointer(e, this.$el.getBoundingClientRect());
+      this.handlePosition = point(normVector.x, normVector.y)
         // convert value range from -1/+1 to 0/1
         .calc((p) => (p + 1) / 2)
         // clamp to available range
@@ -105,49 +106,52 @@ export default {
         // round position by displayed color parts
         .calc((p) => Math.floor(p * this.parts) / this.parts)
         // calc percentaged css pos value by axis
-        .calc((p) => p * 100 * this.direction);
+        .calc((p) => p * 100 * this.orientation);
     },
 
     onEnd () {
       this.active = false;
     },
 
-    draw () {
-      this.direction = getDirection(this.dimension);
-      const pos = Math.max(this.pos.x, this.pos.y);
-      this.pos = point(pos, pos)
-        .calc((p) => p * this.direction);
-      drawColorRange(this.context, this.hex, this.parts, this.direction);
+    onResize (dimension) {
+      const pos = Math.max(this.handlePosition.x, this.handlePosition.y);
+      this.orientation = getOrientation(dimension);
+      this.handlePosition = point(pos, pos).calc((p) => p * this.orientation);
     }
   }
 };
 
-function getDirection (dimension) {
+function getOrientation (dimension) {
   if (dimension.x < dimension.y) {
     return point(0, 1);
   }
   return point(1, 0);
 }
 
-function drawColorRange (context, hex, parts, direction) {
-  const size = point(1, 1).calc((p) => (p / parts * direction) || 1);
+function getSegments (parts, hex) {
   const color = Color(hex).hsl();
-  for (var part = 0; part < parts; part += 1) {
-    const pos = point(() => part / parts * direction);
-    const lightness = part / (parts - 1) * 100;
-    drawRect(context, pos, size, color.lightness(lightness).toString());
-  }
+  return Array(parts).fill(null).map((value, index) => {
+    const lightness = index / (parts - 1) * 100;
+    return {
+      path: getPath(getSegmentPosition(index, parts), getSegmentSize(parts)),
+      color: color.lightness(lightness).toString()
+    };
+  });
 }
 
-function drawRect (context, pos, size, color) {
-  const { width, height } = context.canvas;
-  context.beginPath();
-  context.rect(pos.x * width, pos.y * height, size.x * width, size.y * height);
-  context.fillStyle = color;
-  context.fill();
-  context.strokeStyle = color;
-  context.lineWidth = 0;
-  context.stroke();
+function getSegmentSize (parts) {
+  return point(1, 1).calc((p) => (p / parts * point(1, 0)) || 1);
+}
+
+function getSegmentPosition (index, num) {
+  return point(() => index / num * point(1, 0) - 0.5);
+}
+
+function getPath (pos, size) {
+  const path = new Path2D();
+  path.rect(pos.x, pos.y, size.x + 1, size.y);
+  path.closePath();
+  return path;
 }
 </script>
 
@@ -182,7 +186,7 @@ function drawRect (context, pos, size, color) {
     pointer-events: none;
     transform: translate(var(--x), var(--y));
 
-    & span.selector {
+    & span.handle {
       box-sizing: content-box;
       display: block;
       width: 100%;
@@ -206,7 +210,7 @@ function drawRect (context, pos, size, color) {
     width: var(--size);
     height: 100%;
 
-    & span.selector svg {
+    & span.handle svg {
       left: 50%;
       width: var(--corner-size);
     }
@@ -216,7 +220,7 @@ function drawRect (context, pos, size, color) {
     width: 100%;
     height: var(--size);
 
-    & span.selector svg {
+    & span.handle svg {
       top: 50%;
       height: var(--corner-size);
     }
