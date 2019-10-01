@@ -1,24 +1,31 @@
 <template>
   <div class="color-picker">
-    <atom-canvas
+    <atom-svg
+      ref="svg"
+      :definitions="definitions"
       :segments="sectionSegments"
-      :clip-path="clipPath"
-      @click="onClick"
+      :highlight="highlight"
+      @pointerdown.native="onStart"
     />
-    <!-- <span
+
+    <span
       ref="color"
       class="color"
-    /> -->
+      :style="cssProps"
+    />
   </div>
 </template>
 
 <script>
-import AtomCanvas from '@/components/atoms/Canvas';
+import AtomSvg from '@/components/atoms/Svg';
 import Color from 'color';
+import { arc } from '@/utils/svg';
+import { fromEvent } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 export default {
   components: {
-    AtomCanvas
+    AtomSvg
   },
 
   props: {
@@ -37,43 +44,85 @@ export default {
     alignmentRad: {
       type: Number,
       default () {
-        return Math.PI * 0;
+        return Math.PI * 1;
       }
     }
   },
 
   data () {
     return {
+      definitions: [],
       sectionSegments: [],
-      clipPath: null
+      clipPath: null,
+      color: null,
+      active: false,
+      subscriptions: [],
+      highlight: {
+        href: null,
+        style: null
+      }
     };
+  },
+
+  computed: {
+    cssProps () {
+      return {
+        backgroundColor: this.color
+      };
+    }
   },
 
   mounted () {
     this.prepare();
+
+    const options = { passive: true, capture: false };
+    const pipe = [
+      filter(() => this.active)
+    ];
+    this.subscriptions = [
+      fromEvent(global.document, 'pointermove', options)
+        .pipe(...pipe)
+        .subscribe(this.onTick),
+      fromEvent(global.document, 'pointerup', options)
+        .pipe(...pipe)
+        .subscribe(this.onEnd)
+    ];
+  },
+
+  destroyed () {
+    this.subscriptions.forEach(item => {
+      item.unsubscribe();
+    });
   },
 
   methods: {
-    onClick (e) {
-      const [
-        , , , alpha
-      ] = e;
-      if (alpha !== 0) {
-        console.log(Color(e).toString());
-      }
+    onStart () {
+      this.active = true;
+    },
+
+    onTick (e) {
+      this.highlight = {
+        href: e.srcElement.getAttribute('xlink:href'),
+        style: e.srcElement.getAttribute('style')
+      };
+      this.color = e.srcElement.getAttribute('fill');
+    },
+
+    onEnd (e) {
+      this.active = false;
+      this.highlight = {
+        href: e.srcElement.getAttribute('xlink:href'),
+        style: e.srcElement.getAttribute('style')
+      };
+      this.color = e.srcElement.getAttribute('fill');
     },
 
     prepare () {
       this.clipPath = getClipPath();
-      this.sectionSegments = Array(this.sections).fill(null).map((value, currentSection, array) => {
-        const numSections = array.length;
-        const outerRadius = (1 - currentSection / numSections) / 2;
-        const innerRadius = (1 - (currentSection + 1) / numSections) / 2;
-        const lightness = (currentSection + 1) / (numSections + 1) * 100;
-        const numSegments = getNumberOfSegmentsBySection(this.segments, currentSection, numSections);
-        return getSegments(this.context, outerRadius, innerRadius, this.alignmentRad, numSegments, lightness);
-      });
-    }
+      this.definitions = createDefinitions(this.sections, this.segments);
+      this.sectionSegments = createSegments(this.definitions, this.alignmentRad);
+    },
+
   }
 };
 
@@ -81,25 +130,41 @@ function getNumberOfSegmentsBySection (numSegments, currentSection, numSections)
   return Math.pow(numSegments, (numSections + 1) / 2 - Math.abs(currentSection - (numSections - 1) / 2));
 }
 
-function getSegments (context, outerRadius = 0.5, innerRadius = 0, alignmentRad = 0, segments = 360, lightness = 50) {
-  return Array(segments).fill(null).map((value, index) => {
-    const rad = getSegmentRad(segments);
-    const startRad = rad * index;
-    const midRad = startRad + rad * 0.5;
-    const endRad = startRad + rad * 1;
-    return {
-      path: getPath(context, outerRadius, innerRadius, startRad, endRad),
-      color: Color.hsl(radToDeg(midRad + alignmentRad), 100, lightness).toString()
-    };
+function createDefinitions (sections, segments) {
+  return Array(sections).fill(null).map((value, currentSection, array) => {
+    const numSections = array.length;
+    const outerRadius = (1 - currentSection / (numSections + 1)) / 2;
+    const innerRadius = (1 - (currentSection + 1) / (numSections + 1)) / 2;
+    const numSegments = getNumberOfSegmentsBySection(segments, currentSection, numSections);
+    return createDefinition(currentSection, numSegments, outerRadius, innerRadius);
   });
 }
 
-function getPath (context, outerRadius, innerRadius, startRad, endRad) {
-  const path = new Path2D();
-  path.arc(0, 0, outerRadius, startRad, endRad, false);
-  path.arc(0, 0, innerRadius, endRad, startRad, true);
-  path.closePath();
-  return path;
+function createDefinition (id, segments, outerRadius, innerRadius) {
+  const rad = getSegmentRad(segments);
+  return {
+    id: id,
+    count: segments,
+    rad: rad,
+    path: arc(0, 0, 0, rad * 1, outerRadius, innerRadius)
+  };
+}
+
+function createSegments (definitions, alignmentRad) {
+  return definitions.map((def, defIndex, array) => {
+    const lightness = (def.id + 1) / (array.length + 1) * 100;
+    return Array(def.count).fill(null).map((value, index) => createSegment(index, def, lightness, alignmentRad));
+  }).flat();
+}
+
+function createSegment (index, def, lightness, alignmentRad) {
+  const startRad = def.rad * index;
+  const midRad = startRad + def.rad * 0.5;
+  return {
+    id: def.id,
+    rad: startRad,
+    color: Color.hsl(radToDeg(midRad + alignmentRad), 100, lightness).toString()
+  };
 }
 
 function getClipPath () {
@@ -124,7 +189,8 @@ function radToDeg (rad) {
   padding-top: 100%;
 }
 
-canvas {
+canvas,
+svg {
   position: absolute;
   top: 0;
   left: 0;
@@ -132,15 +198,19 @@ canvas {
   height: 100%;
 }
 
+canvas {
+  visibility: hidden;
+}
+
 .color {
   position: absolute;
   top: 50%;
   left: 50%;
   display: inline-block;
-  width: 33%;
-  height: 33%;
+  width: 15%;
+  height: 15%;
   background-color: white;
-  border: 10px solid white;
+  border: 5px solid white;
   border-radius: 50%;
   transform: translate(-50%, -50%);
 }
