@@ -41,6 +41,14 @@ export default {
         lang: this.$i18n.locale
       }
     };
+  },
+
+  watch: {
+    '$store.state.layout.userSelect': {
+      handler (e) {
+        global.document.body.classList.toggle('no-user-select', !e);
+      }
+    }
   }
 };
 </script>
@@ -48,6 +56,15 @@ export default {
 <style lang="postcss">
 body {
   margin: 0;
+
+  &.no-user-select {
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
 }
 
 html.freeze,

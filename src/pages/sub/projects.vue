@@ -11,6 +11,7 @@
 
 <template>
   <div>
+    <!-- <qr-code /> -->
     <test-form />
   </div>
 </template>
@@ -25,6 +26,7 @@ export default {
   },
 
   components: {
+    // QrCode: () => import('@/components/molecules/QrCode.vue'),
     TestForm: () => import('@/components/organisms/TestForm')
   },
 

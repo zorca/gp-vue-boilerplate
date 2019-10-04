@@ -6,6 +6,7 @@
       :segments="sectionSegments"
       :highlight="highlight"
       @pointerdown.native="onStart"
+      @click.native="onClick"
     />
 
     <span
@@ -72,9 +73,11 @@ export default {
     }
   },
 
-  mounted () {
+  created () {
     this.prepare();
+  },
 
+  mounted () {
     const options = { passive: true, capture: false };
     const pipe = [
       filter(() => this.active)
@@ -96,29 +99,30 @@ export default {
   },
 
   methods: {
+    onClick (e) {
+      const elem = document.elementFromPoint(e.x, e.y);
+      if (elem && elem.nodeName.toLowerCase() === 'use') {
+        this.highlight = {
+          href: elem.getAttribute('xlink:href'),
+          style: elem.getAttribute('style'),
+        };
+        this.color = elem.getAttribute('fill');
+      }
+    },
+
     onStart () {
       this.active = true;
     },
 
     onTick (e) {
-      this.highlight = {
-        href: e.srcElement.getAttribute('xlink:href'),
-        style: e.srcElement.getAttribute('style')
-      };
-      this.color = e.srcElement.getAttribute('fill');
+      this.onClick(e);
     },
 
-    onEnd (e) {
+    onEnd () {
       this.active = false;
-      this.highlight = {
-        href: e.srcElement.getAttribute('xlink:href'),
-        style: e.srcElement.getAttribute('style')
-      };
-      this.color = e.srcElement.getAttribute('fill');
     },
 
     prepare () {
-      this.clipPath = getClipPath();
       this.definitions = createDefinitions(this.sections, this.segments);
       this.sectionSegments = createSegments(this.definitions, this.alignmentRad);
     },
@@ -167,12 +171,6 @@ function createSegment (index, def, lightness, alignmentRad) {
   };
 }
 
-function getClipPath () {
-  const path = new Path2D();
-  path.arc(0, 0, 0.5, 0, 2 * Math.PI);
-  return path;
-}
-
 function getSegmentRad (segments) {
   return Math.PI * 2 / segments;
 }
@@ -186,7 +184,7 @@ function radToDeg (rad) {
 .color-picker {
   position: relative;
   width: 100%;
-  padding-top: 100%;
+  touch-action: none;
 }
 
 canvas,

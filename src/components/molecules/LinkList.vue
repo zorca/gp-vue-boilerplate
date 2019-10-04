@@ -4,15 +4,21 @@
       v-for="(item) in list"
       :key="item.title"
     >
-      <nuxt-link :to="localePath(item.url)">
+      <atom-link :to="localePath(item.url)">
         {{ item.title }}
-      </nuxt-link>
+      </atom-link>
     </li>
   </ul>
 </template>
 
 <script>
+import AtomLink from '@/components/atoms/Link';
+
 export default {
+  components: {
+    AtomLink
+  },
+
   props: {
     list: {
       type: Array,

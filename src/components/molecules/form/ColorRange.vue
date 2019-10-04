@@ -2,6 +2,7 @@
   <div
     :class="['color-range', orientation.x ? 'vertical' : 'horizontal']"
     :style="cssProps"
+    touch-action="none"
   >
     <atom-canvas
       :segments="segments"
@@ -93,6 +94,8 @@ export default {
 
     onStart (e) {
       this.active = true;
+      this.$store.commit('layout/userSelect', false);
+
       this.onTick(e);
     },
 
@@ -111,6 +114,7 @@ export default {
 
     onEnd () {
       this.active = false;
+      this.$store.commit('layout/userSelect', true);
     },
 
     onResize (dimension) {
@@ -166,6 +170,7 @@ function getPath (pos, size) {
   position: relative;
   width: auto;
   margin: var(--border-size);
+  touch-action: none;
 
   & canvas {
     display: block;
