@@ -40,6 +40,7 @@ export default {
     'options.offset': {
       handler () {
         this.observable.reobserve(this.$el);
+        // this.options.current = this.options.offset + this.options.index;
       }
     }
   },
@@ -63,7 +64,7 @@ export default {
       // console.log(this.options);
       return {
         '--x': 0,
-        '--y': `${this.options.offset * 100 * 20}%`
+        '--y': `${this.options.offset * 100 * this.options.numEntries}%`
       };
     }
   }
