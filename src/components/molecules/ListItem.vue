@@ -27,6 +27,12 @@ export default {
       default () {
         return {};
       }
+    },
+    repaint: {
+      type: Boolean,
+      default () {
+        return false;
+      }
     }
   },
 
@@ -37,9 +43,17 @@ export default {
   },
 
   watch: {
+    repaint: {
+      handler (value) {
+        if (value) {
+          this.observable.reobserve(this.$el);
+          this.repaint = false;
+        }
+      }
+    },
     'options.offset': {
       handler () {
-        this.observable.reobserve(this.$el);
+        // this.observable.reobserve(this.$el);
         // this.options.current = this.options.offset + this.options.index;
       }
     }
@@ -77,7 +91,7 @@ li {
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 5em;
+  height: 10em;
   box-shadow: 0 2px 2px 0 rgba(173, 173, 173, 1);
 
   /* transition-duration: 100ms;
