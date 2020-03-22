@@ -5,9 +5,6 @@
 </template>
 
 <script>
-// import { viewportObserver } from '@/service/viewport';
-// import { getElementSize } from '@/utils/element';
-
 export default {
   props: {
     id: {
@@ -27,12 +24,6 @@ export default {
       default () {
         return {};
       }
-    },
-    repaint: {
-      type: Boolean,
-      default () {
-        return false;
-      }
     }
   },
 
@@ -43,14 +34,6 @@ export default {
   },
 
   watch: {
-    repaint: {
-      handler (value) {
-        if (value) {
-          this.observable.reobserve(this.$el);
-          this.repaint = false;
-        }
-      }
-    },
     'options.offset': {
       handler () {
         // this.observable.reobserve(this.$el);
@@ -64,18 +47,11 @@ export default {
   },
 
   destroyed () {
-    console.log(this.observable);
     this.observable.unobserve(this.$el);
   },
 
   methods: {
-    onResize () {
-      // const size = getElementSize(this.$el);
-      // console.log(size);
-    },
-
     cssVars () {
-      // console.log(this.options);
       return {
         '--x': 0,
         '--y': `${this.options.offset * 100 * this.options.numEntries}%`
