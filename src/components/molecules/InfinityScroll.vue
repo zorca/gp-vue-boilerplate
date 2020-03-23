@@ -69,7 +69,7 @@ export default {
 
       if (item.entry.before) {
         this.scrollDirection.current = getScrollDirection(item);
-        arrangeEntriesOutsideOfViewport(item, this.items, this.scrollDirection);
+        arrangeEntriesOutsideOfViewport(item, this.items, this.scrollDirection, this.intersectionObservable);
         this.scrollDirection.before = this.scrollDirection.current;
       }
       item.entry.before = entry;
@@ -88,9 +88,9 @@ function getScrollDirection (item) {
   }
 }
 
-function arrangeEntriesOutsideOfViewport (item, legend, scrollDirection) {
+function arrangeEntriesOutsideOfViewport (item, legend, scrollDirection, intersectionObservable) {
   if (scrollDirection.current !== scrollDirection.before) {
-    readjustItems(legend);
+    readjustItems(intersectionObservable);
   } else if (isScrollDown(scrollDirection) && isEntryAboveViewport(item.entry.current)) {
     placeItemOutsideOfViewport(item, legend[legend.length - 1], scrollDirection.current);
   } else if (isScrollUp(scrollDirection) && isEntryBelowViewport(item.entry.current)) {
@@ -102,11 +102,9 @@ function hasOffsetUpdate (item) {
   return Math.abs(item.entry.before.boundingClientRect.y - item.entry.current.boundingClientRect.y) > item.entry.current.rootBounds.height;
 }
 
-function readjustItems (items) {
+function readjustItems (intersectionObservable) {
   // TODO: correct order to reobserve
-  items.forEach((item) => {
-    item.entry.current.target.__vue__.observable.reobserve(item.entry.current.target);
-  });
+  intersectionObservable.reobserveAll();
 }
 
 function isScrollUp (scrollDirection) {
