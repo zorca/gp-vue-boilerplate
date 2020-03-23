@@ -1,5 +1,5 @@
 <template>
-  <ul>
+  <ul :class="{'scroll-bottom-up': scrollBottomUp}">
     <component
       :is="item.component"
       v-for="item in items"
@@ -23,6 +23,14 @@ import IntersectionObservable from '@/classes/IntersectionObservable';
 const numEntries = 20;
 
 export default {
+  props: {
+    scrollBottomUp: {
+      type: Boolean,
+      default () {
+        return false;
+      }
+    }
+  },
   data () {
     return {
       intersectionObservable: null,
@@ -68,8 +76,9 @@ export default {
       item.entry.current = entry;
 
       if (item.entry.before) {
-        this.scrollDirection.current = getScrollDirection(item);
-        arrangeEntriesOutsideOfViewport(item, this.items, this.scrollDirection, this.intersectionObservable);
+        this.scrollDirection.current = getScrollDirection(item, this.scrollBottomUp);
+        // console.log(this.scrollDirection.current);
+        arrangeEntriesOutsideOfViewport(item, this.items, this.scrollDirection, this.intersectionObservable, this.scrollBottomUp);
         this.scrollDirection.before = this.scrollDirection.current;
       }
       item.entry.before = entry;
@@ -77,25 +86,40 @@ export default {
   }
 };
 
-function getScrollDirection (item) {
+function getScrollDirection (item, scrollBottomUp) {
   const posDiff = item.entry.current.boundingClientRect.top - item.entry.before.boundingClientRect.top;
-  if (!hasOffsetUpdate(item) && posDiff > 0) {
-    return -1;
-  } else if (!hasOffsetUpdate(item) && posDiff < 0) {
-    return 1;
-  } else {
-    return 0;
+  const dir = validateScrollDirection(item, posDiff);
+  return mirrorDirection(dir, scrollBottomUp);
+}
+
+function validateScrollDirection (item, posDiff) {
+  if (!hasOffsetUpdate(item) && posDiff !== 0) {
+    return -posDiff / Math.abs(posDiff);
+  }
+  return 0;
+}
+
+function mirrorDirection (dir, scrollBottomUp) {
+  if (scrollBottomUp) {
+    return dir * -1;
+  }
+  return dir;
+}
+
+function arrangeEntriesOutsideOfViewport (item, legend, scrollDirection, intersectionObservable, scrollBottomUp) {
+  if (scrollDirection.current !== scrollDirection.before || scrollDirection.current === 0) {
+    readjustItems(intersectionObservable);
+  } else if (isScrollDown(scrollDirection, scrollBottomUp) && isEntryAboveViewport(item.entry.current)) {
+    // console.log('OHO', scrollDirection.current, item.entry.current.target.id, calcBaseIndex(scrollDirection.current, legend.length));
+    placeItemOutsideOfViewport(item, legend[calcBaseIndex(scrollDirection.current, legend.length)], scrollDirection.current);
+  } else if (isScrollUp(scrollDirection, scrollBottomUp) && isEntryBelowViewport(item.entry.current)) {
+    // console.log('AHA', scrollDirection.current, item.entry.current.target.id, calcBaseIndex(scrollDirection.current, legend.length));
+    placeItemOutsideOfViewport(item, legend[calcBaseIndex(scrollDirection.current, legend.length)], scrollDirection.current);
   }
 }
 
-function arrangeEntriesOutsideOfViewport (item, legend, scrollDirection, intersectionObservable) {
-  if (scrollDirection.current !== scrollDirection.before) {
-    readjustItems(intersectionObservable);
-  } else if (isScrollDown(scrollDirection) && isEntryAboveViewport(item.entry.current)) {
-    placeItemOutsideOfViewport(item, legend[legend.length - 1], scrollDirection.current);
-  } else if (isScrollUp(scrollDirection) && isEntryBelowViewport(item.entry.current)) {
-    placeItemOutsideOfViewport(item, legend[0], scrollDirection.current);
-  }
+function calcBaseIndex (dir, size) {
+  return (size + ((dir * -1) - 1) / 2) % size;
 }
 
 function hasOffsetUpdate (item) {
@@ -107,12 +131,12 @@ function readjustItems (intersectionObservable) {
   intersectionObservable.reobserveAll();
 }
 
-function isScrollUp (scrollDirection) {
-  return scrollDirection.current === -1;
+function isScrollUp (scrollDirection, scrollBottomUp) {
+  return scrollDirection.current === mirrorDirection(-1, scrollBottomUp);
 }
 
-function isScrollDown (scrollDirection) {
-  return scrollDirection.current === 1;
+function isScrollDown (scrollDirection, scrollBottomUp) {
+  return scrollDirection.current === mirrorDirection(1, scrollBottomUp);
 }
 
 function isEntryAboveViewport (entry) {
@@ -136,5 +160,10 @@ ul {
   padding: 0;
   margin: 0;
   overflow: scroll;
+
+  &.scroll-bottom-up {
+    transform: rotateZ(180deg);
+    direction: rtl;
+  }
 }
 </style>

@@ -1,6 +1,8 @@
 <template>
   <li :id="id" :style="cssVars()">
-    hello {{ id }}
+    <div>
+      hello {{ id }}
+    </div>
   </li>
 </template>
 
@@ -73,5 +75,9 @@ li {
   /* transition-duration: 100ms;
   transition-property: transform; */
   transform: translate3d(var(--x), var(--y), 0);
+
+  @nest .scroll-bottom-up & {
+    transform: translate3d(var(--x), var(--y), 0) rotateZ(180deg);
+  }
 }
 </style>
