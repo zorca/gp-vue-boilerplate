@@ -29,10 +29,11 @@ export default class IntersectionItem {
     if (this.scrollDirection.isValid()) {
       if (this.isValidToArrange()) {
         this.offset = baseItem.offset + this.scrollDirection.current();
+        this.index.current = this.offset * this.max + this.index.initial;
       }
-      return true;
+      return false;
     }
-    return false;
+    return true;
   }
 
   isValidToArrange () {

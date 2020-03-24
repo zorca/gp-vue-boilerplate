@@ -13,9 +13,9 @@
 </template>
 
 <story
-  name="InfinitiyScroll"
+  name="InfiniteScroll"
   group="Molecules">
-  <infinity-scroll></infinity-scroll>
+  <infinite-scroll></infinite-scroll>
 </story>
 
 <script>
