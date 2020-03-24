@@ -21,10 +21,16 @@ export default {
         return null;
       }
     },
-    options: {
-      type: Object,
+    offset: {
+      type: Number,
       default () {
-        return {};
+        return 0;
+      }
+    },
+    max: {
+      type: Number,
+      default () {
+        return 0;
       }
     }
   },
@@ -56,7 +62,7 @@ export default {
     cssVars () {
       return {
         '--x': 0,
-        '--y': `${this.options.offset * 100 * this.options.numEntries}%`
+        '--y': `${this.offset * 100 * this.max}%`
       };
     }
   }
