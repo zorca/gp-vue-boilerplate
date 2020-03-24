@@ -39,7 +39,7 @@ export default {
     'options.offset': {
       handler () {
         // this.observable.reobserve(this.$el);
-        // this.options.current = this.options.offset + this.options.index;
+        // this.options.index.current = this.options.offset * this.options.numEntries + this.options.index.initial;
       }
     }
   },

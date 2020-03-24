@@ -27,7 +27,7 @@ export default {
     scrollBottomUp: {
       type: Boolean,
       default () {
-        return false;
+        return true;
       }
     }
   },
@@ -45,7 +45,11 @@ export default {
           component: () => import('@/components/molecules/ListItem'),
           options: {
             numEntries,
-            offset: 0
+            offset: 0,
+            index: {
+              initial: value,
+              current: value
+            }
           },
           entry: {
             current: null,
@@ -59,7 +63,7 @@ export default {
   mounted () {
     this.intersectionObservable = new IntersectionObservable({
       root: this.$el,
-      rootMargin: '100% 0px',
+      rootMargin: '150% 0px',
       threshold: Array.from(Array(100).keys()).map((value) => { return value / 100; })
     });
     this.subscription = this.intersectionObservable.subscribe(this.onUpdate);
@@ -73,15 +77,15 @@ export default {
   methods: {
     onUpdate (entry) {
       const item = this.items.find(item => item.id === Number(entry.target.id));
+      item.entry.before = item.entry.current;
       item.entry.current = entry;
 
       if (item.entry.before) {
         this.scrollDirection.current = getScrollDirection(item, this.scrollBottomUp);
-        // console.log(this.scrollDirection.current);
-        arrangeEntriesOutsideOfViewport(item, this.items, this.scrollDirection, this.intersectionObservable, this.scrollBottomUp);
+        const baseIndex = calcBaseIndex(this.scrollDirection.current, this.items.length);
+        arrangeEntriesOutsideOfViewport(item, this.items[Number(baseIndex)], this.scrollDirection, this.intersectionObservable, this.scrollBottomUp);
         this.scrollDirection.before = this.scrollDirection.current;
       }
-      item.entry.before = entry;
     }
   }
 };
@@ -99,6 +103,10 @@ function validateScrollDirection (item, posDiff) {
   return 0;
 }
 
+function hasOffsetUpdate (item) {
+  return Math.abs(item.entry.before.boundingClientRect.y - item.entry.current.boundingClientRect.y) > item.entry.current.rootBounds.height;
+}
+
 function mirrorDirection (dir, scrollBottomUp) {
   if (scrollBottomUp) {
     return dir * -1;
@@ -106,24 +114,18 @@ function mirrorDirection (dir, scrollBottomUp) {
   return dir;
 }
 
-function arrangeEntriesOutsideOfViewport (item, legend, scrollDirection, intersectionObservable, scrollBottomUp) {
-  if (scrollDirection.current !== scrollDirection.before || scrollDirection.current === 0) {
-    readjustItems(intersectionObservable);
-  } else if (isScrollDown(scrollDirection, scrollBottomUp) && isEntryAboveViewport(item.entry.current)) {
-    // console.log('OHO', scrollDirection.current, item.entry.current.target.id, calcBaseIndex(scrollDirection.current, legend.length));
-    placeItemOutsideOfViewport(item, legend[calcBaseIndex(scrollDirection.current, legend.length)], scrollDirection.current);
-  } else if (isScrollUp(scrollDirection, scrollBottomUp) && isEntryBelowViewport(item.entry.current)) {
-    // console.log('AHA', scrollDirection.current, item.entry.current.target.id, calcBaseIndex(scrollDirection.current, legend.length));
-    placeItemOutsideOfViewport(item, legend[calcBaseIndex(scrollDirection.current, legend.length)], scrollDirection.current);
-  }
-}
-
 function calcBaseIndex (dir, size) {
   return (size + ((dir * -1) - 1) / 2) % size;
 }
 
-function hasOffsetUpdate (item) {
-  return Math.abs(item.entry.before.boundingClientRect.y - item.entry.current.boundingClientRect.y) > item.entry.current.rootBounds.height;
+function arrangeEntriesOutsideOfViewport (item, baseItem, scrollDirection, intersectionObservable, scrollBottomUp) {
+  if (scrollDirection.current !== scrollDirection.before || scrollDirection.current === 0) {
+    readjustItems(intersectionObservable);
+  } else if (isScrollDown(scrollDirection, scrollBottomUp) && isEntryAboveViewport(item.entry.current)) {
+    placeItemOutsideOfViewport(item, baseItem, scrollDirection.current);
+  } else if (isScrollUp(scrollDirection, scrollBottomUp) && isEntryBelowViewport(item.entry.current)) {
+    placeItemOutsideOfViewport(item, baseItem, scrollDirection.current);
+  }
 }
 
 function readjustItems (intersectionObservable) {
@@ -148,7 +150,9 @@ function isEntryBelowViewport (entry) {
 }
 
 function placeItemOutsideOfViewport (item, baseItem, scrollDirection) {
+  // if (baseItem.options.offset + scrollDirection < 5) {
   item.options.offset = baseItem.options.offset + scrollDirection;
+  // }
 }
 </script>
 
