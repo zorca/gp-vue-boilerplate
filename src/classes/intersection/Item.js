@@ -1,63 +1,46 @@
-import IntersectionDirection from '@/classes/intersection/Direction';
+import IntersectionItemDirection from '@/classes/intersection/item/Direction';
+import IntersectionItemEntry from '@/classes/intersection/item/Entry';
 
 export default class IntersectionItem {
   constructor (index, max, mirror) {
     this.offset = 0;
-    this.component = () => import('@/components/molecules/ListItem');
     this.index = {
       initial: index,
       current: index
     };
     this.max = max;
-    this.entry = {
-      before: null,
-      current: null
-    };
-    this.scrollDirection = new IntersectionDirection(mirror);
+    this.entry = new IntersectionItemEntry();
+    this.scrollDirection = new IntersectionItemDirection(mirror);
+  }
+
+  component () {
+    return import('@/components/molecules/ListItem');
   }
 
   update (entry) {
-    this.entry.before = this.entry.current;
-    this.entry.current = entry;
-  }
+    this.entry.update(entry);
 
-  getBaseIndex () {
-    if (this.entry.before) {
+    if (this.entry.before()) {
       this.scrollDirection.update(this.entry);
-      return calcBaseIndex(this.scrollDirection, this.max);
     }
-    return 0;
   }
 
   arrangeOutsideOfViewport (baseItem) {
     if (this.scrollDirection.isValid()) {
       if (this.isValidToArrange()) {
-        this.offset = baseItem.offset + this.scrollDirection;
+        this.offset = baseItem.offset + this.scrollDirection.current();
       }
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
   isValidToArrange () {
     return (
-      this.scrollDirection.isDown() && isEntryAboveViewport(this.entry.current)
+      this.scrollDirection.isDown() && this.entry.isAboveViewport()
     ) || (
-      this.scrollDirection.isUp() && isEntryBelowViewport(this.entry.current)
+      this.scrollDirection.isUp() && this.entry.isBelowViewport()
     );
   }
-}
-
-function calcBaseIndex (dir, size) {
-  return (size + ((dir * -1) - 1) / 2) % size;
-}
-
-function isEntryAboveViewport (entry) {
-  return entry.intersectionRatio === 0 && entry.boundingClientRect.top < entry.intersectionRect.top;
-}
-
-function isEntryBelowViewport (entry) {
-  return entry.intersectionRatio === 0 && entry.boundingClientRect.top > entry.intersectionRect.top;
 }
 

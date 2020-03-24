@@ -2,7 +2,7 @@
   <ul :class="{'scroll-bottom-up': scrollBottomUp}">
     <component
       :is="item.component"
-      v-for="item in items"
+      v-for="item in items.list"
       :id="item.index.initial"
       :key="'list-item-' + item.index.initial"
       :offset="item.offset"
@@ -20,6 +20,7 @@
 
 <script>
 import IntersectionObservable from '@/classes/intersection/Observable';
+import IntersectionItemList from '@/classes/intersection/ItemList';
 import IntersectionItem from '@/classes/intersection/Item';
 
 export default {
@@ -41,9 +42,9 @@ export default {
     return {
       observable: null,
       subscription: null,
-      items: Array.from(Array(this.maxItems).keys()).map((value) => {
+      items: new IntersectionItemList(Array.from(Array(this.maxItems).keys()).map((value) => {
         return new IntersectionItem(value, this.maxItems, this.scrollBottomUp);
-      })
+      }))
     };
   },
 
@@ -63,10 +64,10 @@ export default {
 
   methods: {
     onUpdate (entry) {
-      const item = this.items.find(item => item.index.initial === Number(entry.target.id));
+      const item = this.items.getItemByEntry(entry);
       item.update(entry);
 
-      if (!item.arrangeOutsideOfViewport(this.items[item.getBaseIndex()])) {
+      if (!item.arrangeOutsideOfViewport(this.items.getBaseItem(item))) {
         this.readjustItems();
       }
     },
