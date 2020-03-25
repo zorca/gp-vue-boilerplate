@@ -1,7 +1,7 @@
 <template>
   <li :id="id" :style="cssVars()">
     <div>
-      hello {{ id }}
+      hello {{ value }}
     </div>
   </li>
 </template>
@@ -28,6 +28,12 @@ export default {
       }
     },
     max: {
+      type: Number,
+      default () {
+        return 0;
+      }
+    },
+    value: {
       type: Number,
       default () {
         return 0;

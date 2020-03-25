@@ -8,6 +8,7 @@
       :offset="item.offset"
       :max="item.max"
       :observable="observable"
+      :value="item.index.current"
     />
   </ul>
 </template>
@@ -36,24 +37,34 @@ export default {
       default () {
         return 20;
       }
+    },
+    rootMargin: {
+      type: String,
+      default () {
+        return '150% 0%';
+      }
     }
   },
   data () {
     return {
       observable: null,
       subscription: null,
-      items: new IntersectionItemList(Array.from(Array(this.maxItems).keys()).map((value) => {
-        return new IntersectionItem(value, this.maxItems, this.scrollBottomUp);
-      }))
+      items: [],
+      total: -1
     };
   },
 
   mounted () {
     this.observable = new IntersectionObservable({
       root: this.$el,
-      rootMargin: '150% 0px',
+      rootMargin: this.rootMargin,
       threshold: Array.from(Array(100).keys()).map((value) => { return value / 100; })
     });
+
+    this.items = new IntersectionItemList(Array.from(Array(this.maxItems).keys()).map((value) => {
+      return new IntersectionItem(value, this.maxItems, this.scrollBottomUp);
+    }));
+
     this.subscription = this.observable.subscribe(this.onUpdate);
   },
 
@@ -67,7 +78,7 @@ export default {
       const item = this.items.getItemByEntry(entry);
       item.update(entry);
 
-      if (!item.arrangeOutsideOfViewport(this.items.getBaseItem(item))) {
+      if (!item.arrangeOutsideOfViewport(this.items.getBaseItem(item), this.total)) {
         this.readjustItems();
       }
     },

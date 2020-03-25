@@ -15,6 +15,13 @@ export default class ItemList {
     const index = calcBaseIndex(item.scrollDirection.current(), this.list.length);
     return this.list[Number(index)];
   }
+
+  destroy () {
+    this.list = this.list.reduce((result, item) => {
+      item.destroy();
+      return result;
+    }, []);
+  }
 }
 
 function calcBaseIndex (dir, size) {

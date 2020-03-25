@@ -25,11 +25,13 @@ export default class IntersectionItem {
     }
   }
 
-  arrangeOutsideOfViewport (baseItem) {
-    if (this.scrollDirection.isValid()) {
-      if (this.isValidToArrange()) {
-        this.offset = baseItem.offset + this.scrollDirection.current();
-        this.index.current = this.offset * this.max + this.index.initial;
+  arrangeOutsideOfViewport (baseItem, total) {
+    if (this.scrollDirection.isValid() && baseItem) {
+      const offset = baseItem.offset + this.scrollDirection.current();
+      const index = offset * this.max + this.index.initial;
+      if (this.isValidToArrange() && isInRange(index, total)) {
+        this.offset = offset;
+        this.index.current = index;
       }
       return false;
     }
@@ -43,5 +45,14 @@ export default class IntersectionItem {
       this.scrollDirection.isUp() && this.entry.isBelowViewport()
     );
   }
+
+  destroy () {
+    this.scrollDirection.destroy();
+    this.entry.destroy();
+  }
+}
+
+function isInRange (index, total) {
+  return index < total || total === -1;
 }
 

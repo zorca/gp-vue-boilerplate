@@ -16,4 +16,8 @@ export default class Buffer {
   current () {
     return this.list[(this.count + this.list.length - 1) % this.list.length];
   }
+
+  destroy () {
+    this.list = [];
+  }
 }

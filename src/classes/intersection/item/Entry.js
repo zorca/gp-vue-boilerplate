@@ -37,6 +37,10 @@ export default class Entry {
     }
     return 0;
   }
+
+  destroy () {
+    this.buffer.destroy();
+  }
 }
 
 function getDiff (current, before) {

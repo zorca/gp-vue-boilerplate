@@ -29,6 +29,10 @@ export default class Direction {
   isUp () {
     return this.current() === mirrorDirection(-1, this.mirror);
   }
+
+  destroy () {
+    this.buffer.destroy();
+  }
 }
 
 function mirrorDirection (dir, mirror) {
