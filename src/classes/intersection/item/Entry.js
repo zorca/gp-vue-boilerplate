@@ -1,5 +1,5 @@
+import { ipoint } from '@js-basics/vector';
 import ValueBuffer from '@/classes/Buffer';
-
 export default class Entry {
   constructor () {
     this.count = 0;
@@ -7,7 +7,16 @@ export default class Entry {
   }
 
   update (entry) {
-    this.buffer.add(entry);
+    this.buffer.add({
+      time: entry.time,
+      rootBounds: ipoint(entry.rootBounds.width, entry.rootBounds.height),
+      boundingClientRect: ipoint(entry.boundingClientRect.x, entry.boundingClientRect.y),
+      intersectionRect: ipoint(entry.intersectionRect.x, entry.intersectionRect.y),
+      intersectionRatio: entry.intersectionRatio,
+      isIntersecting: entry.isIntersecting,
+      isVisible: entry.isVisible,
+      target: entry.target
+    });
   }
 
   before () {
@@ -18,24 +27,20 @@ export default class Entry {
     return this.buffer.current();
   }
 
-  isAboveViewport () {
+  isBeforeViewport () {
     const e = this.current();
-    return e.intersectionRatio === 0 && e.boundingClientRect.top < e.intersectionRect.top;
+    return e.intersectionRatio === 0 && (e.boundingClientRect.x < e.intersectionRect.x || e.boundingClientRect.y < e.intersectionRect.y);
   }
 
-  isBelowViewport () {
+  isAfterViewport () {
     const e = this.current();
-    return e.intersectionRatio === 0 && e.boundingClientRect.top > e.intersectionRect.top;
+    return e.intersectionRatio === 0 && (e.boundingClientRect.x > e.intersectionRect.x || e.boundingClientRect.y > e.intersectionRect.y);
   }
 
   identifyDirection () {
-    const current = this.current();
-    const before = this.before();
-    const posDiff = getDiff(current, before);
-    if (!hasOffsetUpdate(current, before) && posDiff !== 0) {
-      return -posDiff / Math.abs(posDiff);
-    }
-    return 0;
+    const posDiff = ipoint(() => this.current().boundingClientRect - this.before().boundingClientRect);
+    // if (!hasOffsetUpdate(current, before) && posDiff !== 0) {
+    return ipoint(() => (-posDiff / +Math.abs(posDiff)) || 0);
   }
 
   destroy () {
@@ -43,10 +48,6 @@ export default class Entry {
   }
 }
 
-function getDiff (current, before) {
-  return current.boundingClientRect.top - before.boundingClientRect.top;
-}
-
-function hasOffsetUpdate (current, before) {
-  return Math.abs(before.boundingClientRect.y - current.boundingClientRect.y) > current.rootBounds.height;
-}
+// function hasOffsetUpdate (current, before) {
+//   return Math.abs(before.boundingClientRect.y - current.boundingClientRect.y) > current.rootBounds.y;
+// }

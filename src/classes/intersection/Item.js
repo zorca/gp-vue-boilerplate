@@ -1,12 +1,13 @@
+import { ipoint } from '@js-basics/vector';
 import IntersectionItemDirection from '@/classes/intersection/item/Direction';
 import IntersectionItemEntry from '@/classes/intersection/item/Entry';
 
 export default class IntersectionItem {
   constructor (index, max, mirror) {
-    this.offset = 0;
+    this.offset = ipoint();
     this.index = {
       initial: index,
-      current: index
+      current: ipoint(() => index)
     };
     this.max = max;
     this.entry = new IntersectionItemEntry();
@@ -19,7 +20,6 @@ export default class IntersectionItem {
 
   update (entry) {
     this.entry.update(entry);
-
     if (this.entry.before()) {
       this.scrollDirection.update(this.entry);
     }
@@ -27,9 +27,10 @@ export default class IntersectionItem {
 
   arrangeOutsideOfViewport (baseItem, total) {
     if (this.scrollDirection.isValid() && baseItem) {
-      const offset = baseItem.offset + this.scrollDirection.current();
-      const index = offset * this.max + this.index.initial;
-      if (this.isValidToArrange() && isInRange(index, total)) {
+      const offset = ipoint(() => baseItem.offset + this.scrollDirection.current());
+      const index = ipoint(() => offset * this.max + this.index.initial);
+
+      if (this.isValidToArrange() /* && isInRange(index, total) */) {
         this.offset = offset;
         this.index.current = index;
       }
@@ -40,9 +41,9 @@ export default class IntersectionItem {
 
   isValidToArrange () {
     return (
-      this.scrollDirection.isDown() && this.entry.isAboveViewport()
+      this.scrollDirection.isPositive() && this.entry.isBeforeViewport()
     ) || (
-      this.scrollDirection.isUp() && this.entry.isBelowViewport()
+      this.scrollDirection.isNegative() && this.entry.isAfterViewport()
     );
   }
 
@@ -52,7 +53,8 @@ export default class IntersectionItem {
   }
 }
 
-function isInRange (index, total) {
-  return index < total || total === -1;
-}
+// function isInRange (index, total) {
+//   const result = ipoint(() => total - index);
+//   return result.x > 0 && result.y > 0;
+// }
 

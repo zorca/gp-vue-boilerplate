@@ -1,29 +1,37 @@
+import { ipoint } from '@js-basics/vector';
+
 export default class ItemList {
-  constructor (list) {
-    this.list = list;
+  constructor (matrix) {
+    this.matrix = matrix;
+    this.length = ipoint(this.matrix.length, this.matrix[0].length);
+  }
+
+  flat () {
+    return this.matrix.flat();
   }
 
   get (index) {
-    return this.list[Number(index)];
+    return this.matrix[index.x][index.y];
   }
 
   getItemByEntry (entry) {
-    return this.list.find(item => item.index.initial === Number(entry.target.id));
+    const dataset = entry.target.dataset;
+    return this.get(dataset);
   }
 
   getBaseItem (item) {
-    const index = calcBaseIndex(item.scrollDirection.current(), this.list.length);
-    return this.list[Number(index)];
+    const index = calcBaseIndex(item.scrollDirection.current(), this.length);
+    return this.get(index);
   }
 
   destroy () {
-    this.list = this.list.reduce((result, item) => {
-      item.destroy();
-      return result;
-    }, []);
+    // this.list = this.list.reduce((result, item) => {
+    //   item.destroy();
+    //   return result;
+    // }, []);
   }
 }
 
 function calcBaseIndex (dir, size) {
-  return (size + ((dir * -1) - 1) / 2) % size;
+  return ipoint(() => Math.floor((size + ((dir * -1) - 1) / 2) % size));
 }

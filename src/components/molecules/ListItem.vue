@@ -1,12 +1,14 @@
 <template>
   <li :id="id" :style="cssVars()">
     <div>
-      hello {{ value }}
+      hello {{ value.x }} {{ value.y }}
     </div>
   </li>
 </template>
 
 <script>
+import { ipoint, IPoint } from '@js-basics/vector';
+
 export default {
   props: {
     id: {
@@ -22,21 +24,21 @@ export default {
       }
     },
     offset: {
-      type: Number,
+      type: IPoint,
       default () {
-        return 0;
+        return ipoint();
       }
     },
     max: {
-      type: Number,
+      type: IPoint,
       default () {
-        return 0;
+        return ipoint();
       }
     },
     value: {
-      type: Number,
+      type: IPoint,
       default () {
-        return 0;
+        return ipoint();
       }
     }
   },
@@ -67,8 +69,8 @@ export default {
   methods: {
     cssVars () {
       return {
-        '--x': 0,
-        '--y': `${this.offset * 100 * this.max}%`
+        '--x': `${this.offset.x * 100 * this.max.x}%`,
+        '--y': `${this.offset.y * 100 * this.max.y}%`
       };
     }
   }
@@ -78,18 +80,20 @@ export default {
 <style lang="postcss" scoped>
 li {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 10em;
   box-shadow: 0 2px 2px 0 rgba(173, 173, 173, 1);
-
-  /* transition-duration: 100ms;
-  transition-property: transform; */
   transform: translate3d(var(--x), var(--y), 0);
 
-  @nest .scroll-bottom-up & {
+  @nest .scroll-mirror.scroll-direction-vertical & {
     transform: translate3d(var(--x), var(--y), 0) rotateZ(180deg);
+  }
+
+  @nest .scroll-mirror.scroll-direction-horizontal & {
+    transform: translate3d(calc(var(--x) * -1), var(--y), 0);
   }
 }
 </style>

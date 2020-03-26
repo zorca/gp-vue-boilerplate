@@ -1,9 +1,11 @@
+import { ipoint } from '@js-basics/vector';
 import ValueBuffer from '@/classes/Buffer';
 
 export default class Direction {
   constructor (mirror = false) {
     this.mirror = mirror;
     this.buffer = new ValueBuffer(2);
+    this.buffer.add(ipoint(), ipoint());
   }
 
   update (entry) {
@@ -19,15 +21,26 @@ export default class Direction {
   }
 
   isValid () {
-    return this.current() === this.before() && this.current() !== 0;
+    return (
+      this.current() &&
+      this.before()
+    ) && ((
+      this.current().y === this.before().y &&
+      this.current().y !== 0
+    ) || (
+      this.current().x === this.before().x &&
+      this.current().x !== 0
+    ));
   }
 
-  isDown () {
-    return this.current() === mirrorDirection(1, this.mirror);
+  isPositive () {
+    const expectedDirection = mirrorDirection(ipoint(1, 1), this.mirror);
+    return this.current().x === expectedDirection.x || this.current().y === expectedDirection.y;
   }
 
-  isUp () {
-    return this.current() === mirrorDirection(-1, this.mirror);
+  isNegative () {
+    const expectedDirection = mirrorDirection(ipoint(-1, -1), this.mirror);
+    return this.current().x === expectedDirection.x || this.current().y === expectedDirection.y;
   }
 
   destroy () {
@@ -36,8 +49,5 @@ export default class Direction {
 }
 
 function mirrorDirection (dir, mirror) {
-  if (mirror) {
-    return dir * -1;
-  }
-  return dir;
+  return ipoint(() => dir * mirror);
 }

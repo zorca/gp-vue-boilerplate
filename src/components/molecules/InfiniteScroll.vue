@@ -1,10 +1,13 @@
 <template>
-  <ul :class="{'scroll-bottom-up': scrollBottomUp}">
+  <ul
+    :class="htmlClasses()"
+  >
     <component
       :is="item.component"
-      v-for="item in items.list"
-      :id="item.index.initial"
-      :key="'list-item-' + item.index.initial"
+      v-for="item in items.flat()"
+      :key="'list-item-' + item.index.initial.x + '-' + item.index.initial.y"
+      :data-x="item.index.initial.x"
+      :data-y="item.index.initial.y"
       :offset="item.offset"
       :max="item.max"
       :observable="observable"
@@ -20,37 +23,39 @@
 </story>
 
 <script>
+import { ipoint, IPoint } from '@js-basics/vector';
 import IntersectionObservable from '@/classes/intersection/Observable';
 import IntersectionItemList from '@/classes/intersection/ItemList';
 import IntersectionItem from '@/classes/intersection/Item';
 
 export default {
   props: {
-    scrollBottomUp: {
-      type: Boolean,
+    scrollMirror: {
+      type: IPoint,
       default () {
-        return true;
+        return ipoint(1, 1);
       }
     },
     maxItems: {
-      type: Number,
+      type: IPoint,
       default () {
-        return 20;
+        return ipoint(1, 20);
       }
     },
     rootMargin: {
       type: String,
       default () {
-        return '150% 0%';
+        return '200% 1600%';
       }
     }
   },
+
   data () {
     return {
       observable: null,
       subscription: null,
       items: [],
-      total: -1
+      total: ipoint(1, Infinity)
     };
   },
 
@@ -61,9 +66,13 @@ export default {
       threshold: Array.from(Array(100).keys()).map((value) => { return value / 100; })
     });
 
-    this.items = new IntersectionItemList(Array.from(Array(this.maxItems).keys()).map((value) => {
-      return new IntersectionItem(value, this.maxItems, this.scrollBottomUp);
-    }));
+    this.items = new IntersectionItemList(
+      Array.from(Array(this.maxItems.x).keys()).map((x) => {
+        return Array.from(Array(this.maxItems.y).keys()).map((y) => {
+          return new IntersectionItem(ipoint(x, y), this.maxItems, this.scrollMirror);
+        });
+      })
+    );
 
     this.subscription = this.observable.subscribe(this.onUpdate);
   },
@@ -74,6 +83,14 @@ export default {
   },
 
   methods: {
+    htmlClasses () {
+      return {
+        'scroll-mirror': this.scrollMirror.x < 0 || this.scrollMirror.y < 0,
+        'scroll-direction-horizontal': this.maxItems.x > 1,
+        'scroll-direction-vertical': this.maxItems.y > 1
+      };
+    },
+
     onUpdate (entry) {
       const item = this.items.getItemByEntry(entry);
       item.update(entry);
@@ -93,15 +110,27 @@ export default {
 <style lang="postcss" scoped>
 ul {
   display: flex;
-  flex-wrap: wrap;
-  height: 100vh;
+  width: 100%;
   padding: 0;
   margin: 0;
-  overflow: scroll;
+  overflow: auto;
 
-  &.scroll-bottom-up {
-    transform: rotateZ(180deg);
-    direction: rtl;
+  &.scroll-direction-vertical {
+    flex-wrap: wrap;
+    height: 100vh;
+
+    &.scroll-mirror {
+      transform: rotateZ(180deg);
+      direction: rtl;
+    }
   }
+
+  &.scroll-direction-horizontal {
+    &.scroll-mirror {
+      /* transform: rotateZ(180deg); */
+      direction: rtl;
+    }
+  }
+
 }
 </style>

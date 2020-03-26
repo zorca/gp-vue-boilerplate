@@ -4,9 +4,11 @@ export default class Buffer {
     this.list = new Array(max);
   }
 
-  add (value) {
-    this.list[this.count % this.list.length] = value;
-    this.count++;
+  add (...values) {
+    values.forEach((value) => {
+      this.list[this.count % this.list.length] = value;
+      this.count++;
+    });
   }
 
   before () {
