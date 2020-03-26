@@ -127,7 +127,6 @@ ul {
 
   &.scroll-direction-horizontal {
     &.scroll-mirror {
-      /* transform: rotateZ(180deg); */
       direction: rtl;
     }
   }
