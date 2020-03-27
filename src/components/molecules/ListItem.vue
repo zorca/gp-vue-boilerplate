@@ -1,5 +1,5 @@
 <template>
-  <li :id="id" :style="cssVars()">
+  <li :id="value.y" :style="cssVars()">
     <div>
       hello {{ value.x }} {{ value.y }}
     </div>

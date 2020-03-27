@@ -21,26 +21,19 @@ export default class Direction {
   }
 
   isValid () {
+    const current = this.current();
+    const before = this.before();
+
     return (
-      this.current() &&
-      this.before()
+      current &&
+      before
     ) && ((
-      this.current().y === this.before().y &&
-      this.current().y !== 0
+      current.y === before.y &&
+      current.y !== 0
     ) || (
-      this.current().x === this.before().x &&
-      this.current().x !== 0
+      current.x === before.x &&
+      current.x !== 0
     ));
-  }
-
-  isPositive () {
-    const expectedDirection = mirrorDirection(ipoint(1, 1), this.mirror);
-    return this.current().x === expectedDirection.x || this.current().y === expectedDirection.y;
-  }
-
-  isNegative () {
-    const expectedDirection = mirrorDirection(ipoint(-1, -1), this.mirror);
-    return this.current().x === expectedDirection.x || this.current().y === expectedDirection.y;
   }
 
   destroy () {

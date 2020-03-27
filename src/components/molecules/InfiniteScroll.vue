@@ -4,7 +4,7 @@
   >
     <component
       :is="item.component"
-      v-for="item in items.flat()"
+      v-for="(item) in items.flat()"
       :key="'list-item-' + item.index.initial.x + '-' + item.index.initial.y"
       :data-x="item.index.initial.x"
       :data-y="item.index.initial.y"
@@ -33,7 +33,7 @@ export default {
     scrollMirror: {
       type: IPoint,
       default () {
-        return ipoint(1, 1);
+        return ipoint(-1, -1);
       }
     },
     maxItems: {
@@ -60,12 +60,6 @@ export default {
   },
 
   mounted () {
-    this.observable = new IntersectionObservable({
-      root: this.$el,
-      rootMargin: this.rootMargin,
-      threshold: Array.from(Array(100).keys()).map((value) => { return value / 100; })
-    });
-
     this.items = new IntersectionItemList(
       Array.from(Array(this.maxItems.x).keys()).map((x) => {
         return Array.from(Array(this.maxItems.y).keys()).map((y) => {
@@ -73,6 +67,12 @@ export default {
         });
       })
     );
+
+    this.observable = new IntersectionObservable({
+      root: this.$el,
+      rootMargin: this.rootMargin
+      // threshold: Array.from(Array(100).keys()).map((value) => { return value / 100; })
+    });
 
     this.subscription = this.observable.subscribe(this.onUpdate);
   },
@@ -95,7 +95,8 @@ export default {
       const item = this.items.getItemByEntry(entry);
       item.update(entry);
 
-      if (!item.arrangeOutsideOfViewport(this.items.getBaseItem(item), this.total)) {
+      if (item.arrangeOutsideOfViewport(this.items.getBaseItem(item), this.total)) {
+        console.log('AJA');
         this.readjustItems();
       }
     },

@@ -7,39 +7,29 @@ export default class Entry {
   }
 
   update (entry) {
-    this.buffer.add({
-      time: entry.time,
-      rootBounds: ipoint(entry.rootBounds.width, entry.rootBounds.height),
-      boundingClientRect: ipoint(entry.boundingClientRect.x, entry.boundingClientRect.y),
-      intersectionRect: ipoint(entry.intersectionRect.x, entry.intersectionRect.y),
-      intersectionRatio: entry.intersectionRatio,
-      isIntersecting: entry.isIntersecting,
-      isVisible: entry.isVisible,
-      target: entry.target
-    });
+    this.buffer.add(convertEntry(entry));
   }
 
   before () {
-    return this.buffer.before();
+    return this.buffer.before() || this.current();
   }
 
   current () {
     return this.buffer.current();
   }
 
-  isBeforeViewport () {
-    const e = this.current();
-    return e.intersectionRatio === 0 && (e.boundingClientRect.x < e.intersectionRect.x || e.boundingClientRect.y < e.intersectionRect.y);
+  isValid () {
+    const viewportOffset = this.getViewportOffset();
+    return this.current().intersectionRatio === 0 && (viewportOffset.x !== 0 || viewportOffset.y !== 0);
   }
 
-  isAfterViewport () {
+  getViewportOffset () {
     const e = this.current();
-    return e.intersectionRatio === 0 && (e.boundingClientRect.x > e.intersectionRect.x || e.boundingClientRect.y > e.intersectionRect.y);
+    return ipoint(() => ((e.boundingClientRect - e.intersectionRect) / Math.abs(e.boundingClientRect - e.intersectionRect)) || 0);
   }
 
   identifyDirection () {
-    const posDiff = ipoint(() => this.current().boundingClientRect - this.before().boundingClientRect);
-    // if (!hasOffsetUpdate(current, before) && posDiff !== 0) {
+    const posDiff = ipoint(() => Math.round(this.current().boundingClientRect - this.before().boundingClientRect));
     return ipoint(() => (-posDiff / +Math.abs(posDiff)) || 0);
   }
 
@@ -48,6 +38,15 @@ export default class Entry {
   }
 }
 
-// function hasOffsetUpdate (current, before) {
-//   return Math.abs(before.boundingClientRect.y - current.boundingClientRect.y) > current.rootBounds.y;
-// }
+function convertEntry (entry) {
+  return {
+    time: entry.time,
+    rootBounds: ipoint(entry.rootBounds.width, entry.rootBounds.height),
+    boundingClientRect: ipoint(entry.boundingClientRect.x, entry.boundingClientRect.y),
+    intersectionRect: ipoint(entry.intersectionRect.x, entry.intersectionRect.y),
+    intersectionRatio: entry.intersectionRatio,
+    isIntersecting: entry.isIntersecting,
+    isVisible: entry.isVisible,
+    target: entry.target
+  };
+}

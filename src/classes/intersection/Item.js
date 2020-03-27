@@ -7,7 +7,7 @@ export default class IntersectionItem {
     this.offset = ipoint();
     this.index = {
       initial: index,
-      current: ipoint(() => index)
+      current: index
     };
     this.max = max;
     this.entry = new IntersectionItemEntry();
@@ -20,31 +20,17 @@ export default class IntersectionItem {
 
   update (entry) {
     this.entry.update(entry);
-    if (this.entry.before()) {
-      this.scrollDirection.update(this.entry);
-    }
+    this.scrollDirection.update(this.entry);
   }
 
   arrangeOutsideOfViewport (baseItem, total) {
-    if (this.scrollDirection.isValid() && baseItem) {
-      const offset = ipoint(() => baseItem.offset + this.scrollDirection.current());
-      const index = ipoint(() => offset * this.max + this.index.initial);
-
-      if (this.isValidToArrange() /* && isInRange(index, total) */) {
-        this.offset = offset;
-        this.index.current = index;
-      }
-      return false;
+    if (this.scrollDirection.isValid() && this.entry.isValid() && baseItem) {
+      console.log(this.entry.current().target.id);
+      this.offset = ipoint(() => baseItem.offset + this.scrollDirection.current());
+      this.index.current = ipoint(() => this.offset * this.max + this.index.initial);
+      return true;
     }
-    return true;
-  }
-
-  isValidToArrange () {
-    return (
-      this.scrollDirection.isPositive() && this.entry.isBeforeViewport()
-    ) || (
-      this.scrollDirection.isNegative() && this.entry.isAfterViewport()
-    );
+    return false;
   }
 
   destroy () {
