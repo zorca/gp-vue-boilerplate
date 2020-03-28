@@ -1,8 +1,13 @@
 <template>
-  <li :id="value.y" :style="cssVars()">
-    <div>
-      hello {{ value.x }} {{ value.y }}
-    </div>
+  <li
+    :style="cssVars()"
+    :data-index="JSON.stringify({'x': index.x, 'y': index.y})"
+  >
+    <slot>
+      <div>
+        hello {{ index.x }} {{ index.y }}
+      </div>
+    </slot>
   </li>
 </template>
 
@@ -11,19 +16,13 @@ import { ipoint, IPoint } from '@js-basics/vector';
 
 export default {
   props: {
-    id: {
-      type: Number,
-      default () {
-        return 0;
-      }
-    },
     observable: {
       type: Object,
       default () {
         return null;
       }
     },
-    offset: {
+    index: {
       type: IPoint,
       default () {
         return ipoint();
@@ -32,45 +31,37 @@ export default {
     max: {
       type: IPoint,
       default () {
-        return ipoint();
-      }
-    },
-    value: {
-      type: IPoint,
-      default () {
-        return ipoint();
+        return ipoint(1, 1);
       }
     }
   },
 
-  data () {
-    return {
-
-    };
-  },
-
   watch: {
-    'options.offset': {
+    observable: {
       handler () {
-        // this.observable.reobserve(this.$el);
-        // this.options.index.current = this.options.offset * this.options.numEntries + this.options.index.initial;
+        this.observable.observe(this.$el);
       }
     }
   },
 
   mounted () {
-    this.observable.observe(this.$el);
+    if (this.observable) {
+      this.observable.observe(this.$el);
+    }
   },
 
   destroyed () {
-    this.observable.unobserve(this.$el);
+    if (this.observable) {
+      this.observable.unobserve(this.$el);
+    }
   },
 
   methods: {
     cssVars () {
+      const result = ipoint(() => Math.floor(this.index / this.max) * 100 * this.max);
       return {
-        '--x': `${this.offset.x * 100 * this.max.x}%`,
-        '--y': `${this.offset.y * 100 * this.max.y}%`
+        '--x': `${result.x}%`,
+        '--y': `${result.y}%`
       };
     }
   }
@@ -87,6 +78,10 @@ li {
   height: 10em;
   box-shadow: 0 2px 2px 0 rgba(173, 173, 173, 1);
   transform: translate3d(var(--x), var(--y), 0);
+
+  @nest .scroll-direction-horizontal & {
+    width: 25%;
+  }
 
   @nest .scroll-mirror.scroll-direction-vertical & {
     transform: translate3d(var(--x), var(--y), 0) rotateZ(180deg);

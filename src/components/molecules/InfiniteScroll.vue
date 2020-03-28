@@ -2,17 +2,18 @@
   <ul
     :class="htmlClasses()"
   >
-    <component
-      :is="item.component"
-      v-for="(item) in items.flat()"
-      :key="'list-item-' + item.index.initial.x + '-' + item.index.initial.y"
-      :data-x="item.index.initial.x"
-      :data-y="item.index.initial.y"
-      :offset="item.offset"
+    <list-item
+      v-for="(item, index) in items.flat()"
+      :key="'list-item-' + index"
+      :index="item.index"
       :max="item.max"
       :observable="observable"
-      :value="item.index.current"
     />
+    <list-item v-if="toggle && !activate">
+      <button @click="enable">
+        more
+      </button>
+    </list-item>
   </ul>
 </template>
 
@@ -26,26 +27,36 @@
 import { ipoint, IPoint } from '@js-basics/vector';
 import IntersectionObservable from '@/classes/intersection/Observable';
 import IntersectionItemList from '@/classes/intersection/ItemList';
-import IntersectionItem from '@/classes/intersection/Item';
+import ListItem from '@/components/molecules/ListItem';
 
 export default {
+  components: {
+    ListItem
+  },
+
   props: {
-    scrollMirror: {
+    mirror: {
       type: IPoint,
       default () {
         return ipoint(-1, -1);
       }
     },
-    maxItems: {
+    max: {
       type: IPoint,
       default () {
-        return ipoint(1, 20);
+        return ipoint(1, 21);
       }
     },
     rootMargin: {
       type: String,
       default () {
-        return '200% 1600%';
+        return '-50% -50%';
+      }
+    },
+    toggle: {
+      type: Boolean,
+      default () {
+        return true;
       }
     }
   },
@@ -55,26 +66,16 @@ export default {
       observable: null,
       subscription: null,
       items: [],
-      total: ipoint(1, Infinity)
+      total: ipoint(1, Infinity),
+      activate: false
     };
   },
 
   mounted () {
-    this.items = new IntersectionItemList(
-      Array.from(Array(this.maxItems.x).keys()).map((x) => {
-        return Array.from(Array(this.maxItems.y).keys()).map((y) => {
-          return new IntersectionItem(ipoint(x, y), this.maxItems, this.scrollMirror);
-        });
-      })
-    );
-
-    this.observable = new IntersectionObservable({
-      root: this.$el,
-      rootMargin: this.rootMargin
-      // threshold: Array.from(Array(100).keys()).map((value) => { return value / 100; })
-    });
-
-    this.subscription = this.observable.subscribe(this.onUpdate);
+    this.items = new IntersectionItemList(this.max, this.total);
+    if (!this.toggle) {
+      this.enable();
+    }
   },
 
   destroyed () {
@@ -85,27 +86,23 @@ export default {
   methods: {
     htmlClasses () {
       return {
-        'scroll-mirror': this.scrollMirror.x < 0 || this.scrollMirror.y < 0,
-        'scroll-direction-horizontal': this.maxItems.x > 1,
-        'scroll-direction-vertical': this.maxItems.y > 1
+        'scroll-mirror': this.mirror.x < 0 || this.mirror.y < 0,
+        'scroll-direction-horizontal': this.max.x > 1,
+        'scroll-direction-vertical': this.max.y > 1
       };
     },
 
-    onUpdate (entry) {
-      const item = this.items.getItemByEntry(entry);
-      item.update(entry);
-
-      if (item.arrangeOutsideOfViewport(this.items.getBaseItem(item), this.total)) {
-        console.log('AJA');
-        this.readjustItems();
-      }
-    },
-
-    readjustItems () {
-      this.observable.reobserveAll();
+    enable () {
+      this.observable = new IntersectionObservable({
+        root: this.$el,
+        rootMargin: this.rootMargin
+      });
+      this.subscription = this.observable.subscribe(entry => this.items.update(entry));
+      this.activate = true;
     }
   }
 };
+
 </script>
 
 <style lang="postcss" scoped>
@@ -131,6 +128,5 @@ ul {
       direction: rtl;
     }
   }
-
 }
 </style>
