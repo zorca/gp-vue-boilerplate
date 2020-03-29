@@ -4,12 +4,7 @@ export default class ItemList {
   constructor (max, total) {
     this.length = max;
     this.matrix = Array.from(Array(max.x).keys()).map((x) => {
-      return Array.from(Array(max.y).keys()).map((y) => {
-        return {
-          index: ipoint(x, y),
-          max
-        };
-      });
+      return Array.from(Array(max.y).keys()).map((y) => { return { index: ipoint(x, y), max }; });
     });
     this.total = total;
   }
@@ -33,9 +28,8 @@ export default class ItemList {
 function updateItemByEntry (entry, pos, matrix, length, total) {
   const indexOfItem = getIndexOfItem(entry, pos);
   const index = ipoint(() => Math.round((indexOfItem + length) % length));
-
   if (isInRange(indexOfItem, total)) {
-    matrix[Number(index.x)][Number(index.y)].index = indexOfItem;
+    matrix[index.x][index.y].index = indexOfItem;
   }
 }
 

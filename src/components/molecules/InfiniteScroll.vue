@@ -56,7 +56,7 @@ export default {
     toggle: {
       type: Boolean,
       default () {
-        return true;
+        return false;
       }
     }
   },
@@ -65,22 +65,24 @@ export default {
     return {
       observable: null,
       subscription: null,
-      items: [],
-      total: ipoint(1, Infinity),
+      items: new IntersectionItemList(this.max, ipoint(1, Infinity)),
       activate: false
     };
   },
 
   mounted () {
-    this.items = new IntersectionItemList(this.max, this.total);
     if (!this.toggle) {
       this.enable();
     }
   },
 
   destroyed () {
-    this.subscription.unsubscribe();
-    this.observable.destroy();
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+    }
+    if (this.observable) {
+      this.observable.destroy();
+    }
   },
 
   methods: {

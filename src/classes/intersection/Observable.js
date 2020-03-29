@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { flatMap, /* map, */distinctUntilChanged, share } from 'rxjs/operators';
+import { flatMap, distinctUntilChanged, share } from 'rxjs/operators';
 
 export default class IntersectionObservable {
   constructor (options) {
@@ -10,7 +10,6 @@ export default class IntersectionObservable {
     })
       .pipe(
         flatMap(entries => entries),
-        // map((entry) => { console.log('AJA'); return entry.isIntersecting; }),
         distinctUntilChanged(),
         share()
       );
@@ -28,23 +27,6 @@ export default class IntersectionObservable {
   unobserve (el) {
     this.observer.unobserve(el);
     this.elements.delete(el);
-  }
-
-  unobserveAll () {
-    Array.from(this.elements).forEach((item) => {
-      this.unobserve(item);
-    });
-  }
-
-  reobserve (el) {
-    this.unobserve(el);
-    this.observe(el);
-  }
-
-  reobserveAll () {
-    Array.from(this.elements).forEach((item) => {
-      this.reobserve(item);
-    });
   }
 
   destroy () {
