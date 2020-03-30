@@ -44,7 +44,13 @@ export default {
     max: {
       type: IPoint,
       default () {
-        return ipoint(5, 21);
+        return ipoint(1, 21);
+      }
+    },
+    globalRoot: {
+      type: Boolean,
+      default () {
+        return false;
       }
     },
     rootMargin: {
@@ -56,7 +62,7 @@ export default {
     toggle: {
       type: Boolean,
       default () {
-        return false;
+        return true;
       }
     }
   },
@@ -65,7 +71,7 @@ export default {
     return {
       observable: null,
       subscription: null,
-      items: new IntersectionItemList(this.max, ipoint(5, Infinity)),
+      items: new IntersectionItemList(this.max, ipoint(1, Infinity)),
       activate: false
     };
   },
@@ -96,11 +102,18 @@ export default {
 
     enable () {
       this.observable = new IntersectionObservable({
-        root: this.$el,
+        root: this.getRoot(),
         rootMargin: this.rootMargin
       });
       this.subscription = this.observable.subscribe(entry => this.items.update(entry));
       this.activate = true;
+    },
+
+    getRoot () {
+      if (!this.globalRoot) {
+        return this.$el;
+      }
+      return null;
     }
   }
 };
