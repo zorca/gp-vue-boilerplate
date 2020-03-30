@@ -80,15 +80,16 @@ li {
   transform: translate3d(var(--x), var(--y), 0);
 
   @nest .scroll-direction-horizontal & {
-    width: 25%;
-  }
-
-  @nest .scroll-mirror.scroll-direction-vertical & {
-    transform: translate3d(var(--x), var(--y), 0) rotateZ(180deg);
+    width: 20%;
+    height: 20%;
   }
 
   @nest .scroll-mirror.scroll-direction-horizontal & {
     transform: translate3d(calc(var(--x) * -1), var(--y), 0);
+  }
+
+  @nest .scroll-mirror.scroll-direction-vertical & {
+    transform: translate3d(var(--x), var(--y), 0) rotateZ(180deg);
   }
 }
 </style>

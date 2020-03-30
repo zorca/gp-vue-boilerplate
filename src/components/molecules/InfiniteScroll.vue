@@ -44,7 +44,7 @@ export default {
     max: {
       type: IPoint,
       default () {
-        return ipoint(1, 21);
+        return ipoint(5, 21);
       }
     },
     rootMargin: {
@@ -65,7 +65,7 @@ export default {
     return {
       observable: null,
       subscription: null,
-      items: new IntersectionItemList(this.max, ipoint(1, Infinity)),
+      items: new IntersectionItemList(this.max, ipoint(5, Infinity)),
       activate: false
     };
   },
