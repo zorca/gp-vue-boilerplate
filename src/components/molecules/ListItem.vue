@@ -1,14 +1,10 @@
 <template>
-  <li
+  <article
     :style="cssVars()"
     :data-index="JSON.stringify({'x': index.x, 'y': index.y})"
   >
-    <slot>
-      <div>
-        hello {{ index.x }} {{ index.y }}
-      </div>
-    </slot>
-  </li>
+    <slot :index="index" />
+  </article>
 </template>
 
 <script>
@@ -69,27 +65,26 @@ export default {
 </script>
 
 <style lang="postcss" scoped>
-li {
+article {
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  width: 50%;
   height: 10em;
   box-shadow: 0 2px 2px 0 rgba(173, 173, 173, 1);
-  transform: translate3d(var(--x), var(--y), 0);
+  transform: translateX(var(--x)) translateY(var(--y));
 
-  @nest .scroll-direction-horizontal & {
-    width: 20%;
-    height: 20%;
+  @nest .scroll-mirror.scroll-vertical & {
+    transform: translateX(var(--x)) translateY(var(--y)) rotateZ(180deg);
   }
 
-  @nest .scroll-mirror.scroll-direction-horizontal & {
-    transform: translate3d(calc(var(--x) * -1), var(--y), 0);
+  @nest .scroll-mirror.scroll-horizontal & {
+    transform: translateX(calc(var(--x) * -1)) translateY(var(--y));
   }
 
-  @nest .scroll-mirror.scroll-direction-vertical & {
-    transform: translate3d(var(--x), var(--y), 0) rotateZ(180deg);
+  @nest .scroll-mirror.scroll-vertical.scroll-horizontal & {
+    transform: translateX(calc(var(--x) * -1)) translateY(var(--y)) rotateX(180deg);
   }
 }
 </style>

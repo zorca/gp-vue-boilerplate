@@ -1,30 +1,73 @@
 <template>
   <ul
-    :class="htmlClasses()"
+    :class="{
+      'scroll-mirror': mirror,
+      'scroll-horizontal': scroll.horizontal,
+      'scroll-vertical': scroll.vertical
+    }"
   >
-    <list-item
-      v-for="(item, index) in items.flat()"
-      :key="'list-item-' + index"
-      :index="item.index"
-      :max="item.max"
-      :observable="observable"
-    />
-    <list-item v-if="toggle && !activate">
-      <button @click="enable">
-        more
-      </button>
-    </list-item>
+    <li
+      v-for="(listY, indexY) in items.matrix"
+      :key="'list-item-' + indexY"
+    >
+      <list-item
+        v-for="(item, indexX) in listY"
+        :key="'list-item-' + indexY + '-' + indexX"
+        :index="item.index"
+        :max="item.max"
+        :observable="observable"
+      >
+        <template v-slot:default="props">
+          <slot name="item" :index="props.index" />
+        </template>
+      </list-item>
+      <list-item v-if="toggle && !activate && scroll.horizontal">
+        <slot name="toggle-button" :click="enable" />
+      </list-item>
+    </li>
+    <li v-if="toggle && !activate && scroll.vertical">
+      <list-item v-for="value in Array(gridX).keys()" :key="'more-'+ value">
+        <slot name="toggle-button" :click="enable" />
+      </list-item>
+    </li>
   </ul>
 </template>
 
 <story
-  name="InfiniteScroll"
-  group="Molecules">
-  <infinite-scroll></infinite-scroll>
+  name="default"
+  group="Molecules/InfiniteScroll/vertical"
+  knobs="{
+    toggle: { default: boolean('toggle', false) },
+    mirror: { default: boolean('mirror direction', false) },
+    gridX: { default: number('items on x-axis', 1) },
+    gridY: { default: number('items on y-axis', 10) }
+  }">
+  <infinite-scroll :mirror="mirror" :toggle="toggle" :gridX="gridX" :gridY="gridY">
+    <template v-slot:item="props">
+      <div>
+        hello {{ props.index.x }} {{ props.index.y }}
+      </div>
+    </template>
+    <template v-slot:toggle-button="props">
+      <button @click="props.click">more</button>
+    </template>
+  </infinite-scroll>
+</story>
+
+<story
+  name="default"
+  group="Molecules/InfiniteScroll/horizontal"
+  knobs="{
+    toggle: { default: boolean('toggle', false) },
+    mirror: { default: boolean('mirror direction', false) },
+    gridX: { default: number('items on x-axis', 10) },
+    gridY: { default: number('items on y-axis', 1) }
+  }">
+  <infinite-scroll :mirror="mirror" :toggle="toggle" :gridX="gridX" :gridY="gridY"></infinite-scroll>
 </story>
 
 <script>
-import { ipoint, IPoint } from '@js-basics/vector';
+import { ipoint } from '@js-basics/vector';
 import IntersectionObservable from '@/classes/intersection/Observable';
 import IntersectionItemList from '@/classes/intersection/ItemList';
 import ListItem from '@/components/molecules/ListItem';
@@ -36,18 +79,24 @@ export default {
 
   props: {
     mirror: {
-      type: IPoint,
+      type: Boolean,
       default () {
-        return ipoint(-1, -1);
+        return false;
       }
     },
-    max: {
-      type: IPoint,
+    gridX: {
+      type: Number,
       default () {
-        return ipoint(1, 21);
+        return 10;
       }
     },
-    globalRoot: {
+    gridY: {
+      type: Number,
+      default () {
+        return 10;
+      }
+    },
+    rootGlobal: {
       type: Boolean,
       default () {
         return false;
@@ -62,7 +111,7 @@ export default {
     toggle: {
       type: Boolean,
       default () {
-        return true;
+        return false;
       }
     }
   },
@@ -71,12 +120,19 @@ export default {
     return {
       observable: null,
       subscription: null,
-      items: new IntersectionItemList(this.max, ipoint(1, Infinity)),
-      activate: false
+      items: new IntersectionItemList(ipoint(this.gridX, this.gridY), this.getTotal()),
+      activate: false,
+      scroll: {
+        horizontal: false,
+        vertical: false
+      }
     };
   },
 
   mounted () {
+    this.scroll.horizontal = this.$el.scrollWidth > this.$el.clientWidth;
+    this.scroll.vertical = this.$el.scrollHeight > this.$el.clientHeight;
+
     if (!this.toggle) {
       this.enable();
     }
@@ -92,14 +148,6 @@ export default {
   },
 
   methods: {
-    htmlClasses () {
-      return {
-        'scroll-mirror': this.mirror.x < 0 || this.mirror.y < 0,
-        'scroll-direction-horizontal': this.max.x > 1,
-        'scroll-direction-vertical': this.max.y > 1
-      };
-    },
-
     enable () {
       this.observable = new IntersectionObservable({
         root: this.getRoot(),
@@ -109,8 +157,20 @@ export default {
       this.activate = true;
     },
 
+    getTotal () {
+      let x = 1;
+      let y = 1;
+      if (this.gridX > 1) {
+        x = Infinity;
+      }
+      if (this.gridY > 1) {
+        y = Infinity;
+      }
+      return ipoint(x, y);
+    },
+
     getRoot () {
-      if (!this.globalRoot) {
+      if (!this.rootGlobal) {
         return this.$el;
       }
       return null;
@@ -123,25 +183,47 @@ export default {
 <style lang="postcss" scoped>
 ul {
   display: flex;
+  flex-wrap: wrap;
   width: 100%;
+  height: 100vh;
   padding: 0;
   margin: 0;
   overflow: auto;
 
-  &.scroll-direction-vertical {
-    flex-wrap: wrap;
-    height: 100vh;
+  &.scroll-mirror {
+    &.scroll-horizontal {
+      direction: rtl;
+    }
 
-    &.scroll-mirror {
+    &.scroll-vertical {
       transform: rotateZ(180deg);
       direction: rtl;
     }
-  }
 
-  &.scroll-direction-horizontal {
-    &.scroll-mirror {
+    &.scroll-vertical.scroll-horizontal {
+      transform: rotateX(180deg);
       direction: rtl;
     }
+  }
+}
+
+li {
+  display: flex;
+  width: 100%;
+
+  @nest .scroll-vertical & {
+    align-items: center;
+    justify-content: center;
+  }
+
+  @nest .scroll-horizontal & {
+    align-items: center;
+    justify-content: auto;
+  }
+
+  @nest .scroll-vertical.scroll-horizontal & {
+    align-items: initial;
+    justify-content: initial;
   }
 }
 </style>
