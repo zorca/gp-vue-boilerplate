@@ -34,10 +34,10 @@
 </template>
 
 <story
-  name="default"
-  group="Molecules/InfiniteScroll/vertical"
+  name="InfiniteScroll"
+  group="Molecules"
   knobs="{
-    toggle: { default: boolean('toggle', false) },
+    toggle: { default: boolean('toggle', true) },
     mirror: { default: boolean('mirror direction', false) },
     gridX: { default: number('items on x-axis', 1) },
     gridY: { default: number('items on y-axis', 10) }
@@ -52,18 +52,6 @@
       <button @click="props.click">more</button>
     </template>
   </infinite-scroll>
-</story>
-
-<story
-  name="default"
-  group="Molecules/InfiniteScroll/horizontal"
-  knobs="{
-    toggle: { default: boolean('toggle', false) },
-    mirror: { default: boolean('mirror direction', false) },
-    gridX: { default: number('items on x-axis', 10) },
-    gridY: { default: number('items on y-axis', 1) }
-  }">
-  <infinite-scroll :mirror="mirror" :toggle="toggle" :gridX="gridX" :gridY="gridY"></infinite-scroll>
 </story>
 
 <script>
