@@ -1,16 +1,9 @@
-<template>
-  <article
-    :style="cssVars()"
-    :data-index="JSON.stringify({'x': index.x, 'y': index.y})"
-  >
-    <slot :index="index" />
-  </article>
-</template>
 
 <script>
 import { ipoint, IPoint } from '@js-basics/vector';
 
 export default {
+  abstract: true,
   props: {
     observable: {
       type: Object,
@@ -52,20 +45,50 @@ export default {
     }
   },
 
-  methods: {
-    cssVars () {
+  render () {
+    try {
       const result = ipoint(() => Math.floor(this.index / this.max) * 100 * this.max);
-      return {
-        '--x': `${result.x}%`,
-        '--y': `${result.y}%`
-      };
+
+      mergeDeep(this.$slots.default[0].data, {
+        attrs: {
+          style: `--x: ${result.x}%; --y: ${result.y}%`,
+          'data-index': JSON.stringify({ x: this.index.x, y: this.index.y })
+        }
+      });
+
+      return this.$slots.default[0];
+    } catch (e) {
+      throw new Error(e);
     }
   }
 };
+
+function mergeDeep (target, source) {
+  const isObject = obj => obj && typeof obj === 'object';
+
+  if (!isObject(target) || !isObject(source)) {
+    return source;
+  }
+
+  Object.keys(source).forEach((key) => {
+    const targetValue = target[key.toString()];
+    const sourceValue = source[key.toString()];
+
+    if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
+      target[key.toString()] = targetValue.concat(sourceValue);
+    } else if (isObject(targetValue) && isObject(sourceValue)) {
+      target[key.toString()] = mergeDeep(Object.assign({}, targetValue), sourceValue);
+    } else {
+      target[key.toString()] = sourceValue;
+    }
+  });
+
+  return target;
+}
 </script>
 
 <style lang="postcss" scoped>
-article {
+div.item {
   display: flex;
   flex-shrink: 0;
   align-items: center;

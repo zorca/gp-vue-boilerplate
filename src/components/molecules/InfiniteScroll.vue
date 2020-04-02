@@ -1,14 +1,11 @@
 <template>
-  <ul
-    :class="{
-      'scroll-mirror': mirror,
-      'scroll-horizontal': scroll.horizontal,
-      'scroll-vertical': scroll.vertical
-    }"
+  <div
+    :class="htmlClasses"
   >
-    <li
+    <div
       v-for="(listY, indexY) in items.matrix"
       :key="'list-item-' + indexY"
+      class="row"
     >
       <list-item
         v-for="(item, indexX) in listY"
@@ -17,20 +14,16 @@
         :max="item.max"
         :observable="observable"
       >
-        <template v-slot:default="props">
-          <slot name="item" :index="props.index" />
-        </template>
+        <slot name="item" :index="item.index" />
       </list-item>
-      <list-item v-if="toggle && !activate && scroll.horizontal">
+      <div v-if="toggle && !activate && scroll.horizontal" class="toggle horizontal">
         <slot name="toggle-button" :click="enable" />
-      </list-item>
-    </li>
-    <li v-if="toggle && !activate && scroll.vertical">
-      <list-item v-for="value in Array(gridX).keys()" :key="'more-'+ value">
-        <slot name="toggle-button" :click="enable" />
-      </list-item>
-    </li>
-  </ul>
+      </div>
+    </div>
+    <div v-if="toggle && !activate && scroll.vertical" class="toggle vertical">
+      <slot name="toggle-button" :click="enable" />
+    </div>
+  </div>
 </template>
 
 <story
@@ -42,13 +35,13 @@
     gridX: { default: number('items on x-axis', 1) },
     gridY: { default: number('items on y-axis', 10) }
   }">
-  <infinite-scroll :mirror="mirror" :toggle="toggle" :gridX="gridX" :gridY="gridY">
-    <template v-slot:item="props">
-      <div>
+  <infinite-scroll :mirror="mirror" :toggle="toggle" :grid-x="gridX" :grid-y="gridY">
+    <template lang="html" v-slot:item="props">
+      <div class="item">
         hello {{ props.index.x }} {{ props.index.y }}
       </div>
     </template>
-    <template v-slot:toggle-button="props">
+    <template lang="html" v-slot:toggle-button="props">
       <button @click="props.click">more</button>
     </template>
   </infinite-scroll>
@@ -84,10 +77,11 @@ export default {
         return 10;
       }
     },
-    rootGlobal: {
-      type: Boolean,
+    rootElement: {
+      type: HTMLElement,
       default () {
-        return false;
+        // global.document.documentElement is global viewport
+        return null;
       }
     },
     rootMargin: {
@@ -117,6 +111,17 @@ export default {
     };
   },
 
+  computed: {
+    htmlClasses () {
+      return {
+        container: true,
+        'scroll-mirror': this.mirror,
+        'scroll-horizontal': this.scroll.horizontal,
+        'scroll-vertical': this.scroll.vertical
+      };
+    }
+  },
+
   mounted () {
     this.scroll.horizontal = this.$el.scrollWidth > this.$el.clientWidth;
     this.scroll.vertical = this.$el.scrollHeight > this.$el.clientHeight;
@@ -138,7 +143,7 @@ export default {
   methods: {
     enable () {
       this.observable = new IntersectionObservable({
-        root: this.getRoot(),
+        root: this.rootElement || this.$el,
         rootMargin: this.rootMargin
       });
       this.subscription = this.observable.subscribe(entry => this.items.update(entry));
@@ -155,13 +160,6 @@ export default {
         y = Infinity;
       }
       return ipoint(x, y);
-    },
-
-    getRoot () {
-      if (!this.rootGlobal) {
-        return this.$el;
-      }
-      return null;
     }
   }
 };
@@ -169,7 +167,8 @@ export default {
 </script>
 
 <style lang="postcss" scoped>
-ul {
+
+div.container {
   display: flex;
   flex-wrap: wrap;
   width: 100%;
@@ -195,23 +194,31 @@ ul {
   }
 }
 
-li {
+div.row {
   display: flex;
   width: 100%;
 
-  @nest .scroll-vertical & {
+  @nest .scroll-vertical:not(.scroll-horizontal) & {
     align-items: center;
     justify-content: center;
   }
 
-  @nest .scroll-horizontal & {
+  @nest .scroll-horizontal:not(.scroll-vertical) & {
     align-items: center;
-    justify-content: auto;
+  }
+}
+
+div.toggle {
+  position: sticky;
+
+  &.vertical {
+    left: 50%;
+    transform: translateX(-50%);
   }
 
-  @nest .scroll-vertical.scroll-horizontal & {
-    align-items: initial;
-    justify-content: initial;
+  &.horizontal {
+    top: 50%;
+    transform: translateY(-50%);
   }
 }
 </style>

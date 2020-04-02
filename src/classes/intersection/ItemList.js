@@ -11,13 +11,12 @@ export default class ItemList {
 
   update (entry) {
     if (entry.isIntersecting) {
-      const availableRange = ipoint(() => Math.floor((this.length) / 2));
+      const availableRange = ipoint(() => Math.floor((this.length - 1) / 2));
       for (let y = -availableRange.y; y <= availableRange.y; y++) {
         for (let x = -availableRange.x; x <= availableRange.x; x++) {
           updateItemByEntry(entry, ipoint(x, y), this.matrix, this.length, this.total);
         }
       }
-      ipoint(1);
     }
   }
 }
