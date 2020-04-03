@@ -4,7 +4,7 @@
       v-for="(item, index) in items.matrix.flat()"
       :key="'list-item-' + index"
       v-bind="item"
-      @added="itemAdded"
+      @mounted="itemAdded"
     >
       <slot name="item" :index="item.index" />
     </list-item>

@@ -26,7 +26,7 @@ export default {
   },
 
   mounted () {
-    this.$emit('added', this.$el);
+    this.$emit('mounted', this.$el);
   },
 
   render () {
