@@ -1,26 +1,18 @@
 <template>
-  <div
-    :class="htmlClasses"
-  >
-    <div
-      v-for="(listY, indexY) in items.matrix"
-      :key="'list-item-' + indexY"
-      class="row"
+  <div class="container" :class="htmlClasses">
+    <list-item
+      v-for="(item, index) in items.matrix.flat()"
+      :key="'list-item-' + index"
+      v-bind="item"
+      @added="itemAdded"
     >
-      <list-item
-        v-for="(item, indexX) in listY"
-        :key="'list-item-' + indexY + '-' + indexX"
-        :index="item.index"
-        :max="item.max"
-        :observable="observable"
-      >
-        <slot name="item" :index="item.index" />
-      </list-item>
-      <div v-if="toggle && !activate && scroll.horizontal" class="toggle horizontal">
-        <slot name="toggle-button" :click="enable" />
-      </div>
+      <slot name="item" :index="item.index" />
+    </list-item>
+    <div v-if="toggle && !activate && scroll.vertical" class="toggle horizontal">
+      <slot name="toggle-button" :click="enable" />
     </div>
-    <div v-if="toggle && !activate && scroll.vertical" class="toggle vertical">
+
+    <div v-if="toggle && !activate && scroll.horizontal" class="toggle vertical">
       <slot name="toggle-button" :click="enable" />
     </div>
   </div>
@@ -84,12 +76,6 @@ export default {
         return null;
       }
     },
-    rootMargin: {
-      type: String,
-      default () {
-        return '-50% -50%';
-      }
-    },
     toggle: {
       type: Boolean,
       default () {
@@ -107,14 +93,14 @@ export default {
       scroll: {
         horizontal: false,
         vertical: false
-      }
+      },
+      elements: new Set()
     };
   },
 
   computed: {
     htmlClasses () {
       return {
-        container: true,
         'scroll-mirror': this.mirror,
         'scroll-horizontal': this.scroll.horizontal,
         'scroll-vertical': this.scroll.vertical
@@ -126,6 +112,11 @@ export default {
     this.scroll.horizontal = this.$el.scrollWidth > this.$el.clientWidth;
     this.scroll.vertical = this.$el.scrollHeight > this.$el.clientHeight;
 
+    this.observable = new IntersectionObservable(Array.from(this.elements), {
+      root: this.rootElement || this.$el,
+      rootMargin: '-50% -50%'
+    });
+
     if (!this.toggle) {
       this.enable();
     }
@@ -135,19 +126,16 @@ export default {
     if (this.subscription) {
       this.subscription.unsubscribe();
     }
-    if (this.observable) {
-      this.observable.destroy();
-    }
   },
 
   methods: {
     enable () {
-      this.observable = new IntersectionObservable({
-        root: this.rootElement || this.$el,
-        rootMargin: this.rootMargin
-      });
       this.subscription = this.observable.subscribe(entry => this.items.update(entry));
       this.activate = true;
+    },
+
+    itemAdded (el) {
+      this.elements.add(el);
     },
 
     getTotal () {
@@ -169,56 +157,61 @@ export default {
 <style lang="postcss" scoped>
 
 div.container {
-  display: flex;
-  flex-wrap: wrap;
+  display: inline-grid;
   width: 100%;
   height: 100vh;
   padding: 0;
   margin: 0;
   overflow: auto;
 
-  &.scroll-mirror {
-    &.scroll-horizontal {
+  &.scroll-horizontal:not(.scroll-vertical) {
+    align-content: center;
+
+    &.scroll-mirror {
       direction: rtl;
     }
+  }
 
-    &.scroll-vertical {
+  &.scroll-vertical:not(.scroll-horizontal) {
+    justify-content: center;
+
+    &.scroll-mirror {
       transform: rotateZ(180deg);
       direction: rtl;
     }
+  }
 
-    &.scroll-vertical.scroll-horizontal {
+  &.scroll-vertical.scroll-horizontal {
+    &.scroll-mirror {
       transform: rotateX(180deg);
       direction: rtl;
     }
   }
 }
 
-div.row {
-  display: flex;
-  width: 100%;
-
-  @nest .scroll-vertical:not(.scroll-horizontal) & {
-    align-items: center;
-    justify-content: center;
-  }
-
-  @nest .scroll-horizontal:not(.scroll-vertical) & {
-    align-items: center;
-  }
-}
-
 div.toggle {
-  position: sticky;
-
   &.vertical {
-    left: 50%;
-    transform: translateX(-50%);
+    grid-row-start: 1;
+    grid-row-end: 11;
+    grid-column-start: 11;
+
+    & button {
+      position: sticky;
+      top: 50%;
+      transform: translateY(-50%);
+    }
   }
 
   &.horizontal {
-    top: 50%;
-    transform: translateY(-50%);
+    grid-row-start: 11;
+    grid-column-start: 1;
+    grid-column-end: 11;
+
+    & button {
+      position: sticky;
+      left: 50%;
+      transform: translateX(-50%);
+    }
   }
 }
 </style>

@@ -2,11 +2,11 @@ import { Observable } from 'rxjs';
 import { flatMap, distinctUntilChanged, share } from 'rxjs/operators';
 
 export default class IntersectionObservable {
-  constructor (options) {
-    this.elements = new Set();
+  constructor (elements, options) {
     this.observable = new Observable((observer) => {
       this.observer = createIntersectionObserver(observer, options);
-      return () => { this.observer.disconnect(); };
+      elements.forEach(e => this.observe(e));
+      return () => { this.destroy(); };
     })
       .pipe(
         flatMap(entries => entries),
@@ -21,12 +21,10 @@ export default class IntersectionObservable {
 
   observe (el) {
     this.observer.observe(el);
-    this.elements.add(el);
   }
 
   unobserve (el) {
     this.observer.unobserve(el);
-    this.elements.delete(el);
   }
 
   destroy () {
