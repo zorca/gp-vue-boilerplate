@@ -253,6 +253,10 @@ div.toggle {
       position: sticky;
       top: 50%;
       transform: translateY(-50%);
+
+      @nest .scroll-mirror.scroll-vertical.scroll-horizontal & {
+        transform: rotateX(180deg);
+      }
     }
   }
 
@@ -265,6 +269,15 @@ div.toggle {
       position: sticky;
       left: 50%;
       transform: translateX(-50%);
+
+      @nest .scroll-mirror & {
+        right: 50%;
+        transform: translateX(50%) rotateZ(180deg);
+      }
+
+      @nest .scroll-mirror.scroll-vertical.scroll-horizontal & {
+        transform: translateX(50%) rotateX(180deg);
+      }
     }
   }
 }
