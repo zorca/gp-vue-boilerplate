@@ -10,26 +10,20 @@ export default class ItemList {
     this.index = ipoint();
   }
 
-  getItem (index) {
+  getItem (index = this.index) {
     const { x, y } = ipoint(() => Math.round((index + this.length) % this.length));
     return this.matrix[Number(y)][Number(x)];
-  }
-
-  getCurrentItem () {
-    return this.getItem(this.index);
   }
 
   getItemOffset (index) {
     return ipoint(() => Math.floor(index / this.length) * this.length);
   }
 
-  update (currentIndex, prevent) {
-    if (!prevent) {
-      const availableRange = ipoint(() => Math.floor((this.length) / 2));
-      for (let y = -availableRange.y; y <= availableRange.y; y++) {
-        for (let x = -availableRange.x; x <= availableRange.x; x++) {
-          this.updateItem(ipoint(() => currentIndex + ipoint(x, y)));
-        }
+  update (currentIndex) {
+    const availableRange = ipoint(() => Math.floor((this.length) / 2));
+    for (let y = -availableRange.y; y <= availableRange.y; y++) {
+      for (let x = -availableRange.x; x <= availableRange.x; x++) {
+        this.updateItem(ipoint(() => currentIndex + ipoint(x, y)));
       }
     }
     this.index = currentIndex;

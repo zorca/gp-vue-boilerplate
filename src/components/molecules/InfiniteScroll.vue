@@ -120,7 +120,7 @@ export default {
     });
 
     if (!this.toggle) {
-      this.scrollTo(this.getElement(this.items.getCurrentItem().index));
+      this.scrollTo(this.getElement(this.items.getItem().index));
       this.enable();
     }
   },
@@ -134,7 +134,9 @@ export default {
   methods: {
     createItemList () {
       const itemList = new IntersectionItemList(ipoint(this.gridX, this.gridY), this.getTotal());
-      itemList.update(this.getDeepIndex(), this.toggle);
+      if (!this.toggle) {
+        itemList.update(this.getDeepIndex());
+      }
       return itemList;
     },
 
@@ -168,15 +170,17 @@ export default {
     },
 
     setDeepIndex (index) {
-      this.$router.replace({
-        query: JSON.parse(index.toString())
-      });
+      if (!this.toggle) {
+        this.$router.replace({
+          query: JSON.parse(index.toString())
+        });
+      }
     },
 
     scrollTo (el) {
       const child = getElementRect(el);
       const parent = getElementRect(this.root);
-      const scroll = ipoint(() => Math.max(0, child.pos + (child.size / 2) - (parent.size / 2) - parent.pos));
+      const scroll = ipoint(() => Math.max(0, child.pos - parent.pos + (child.size / 2) - (parent.size / 2)));
       this.root.scrollTo(scroll.x, scroll.y);
     },
 
