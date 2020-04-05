@@ -1,5 +1,5 @@
 <template>
-  <div class="container" :class="htmlClasses">
+  <div class="container" :class="htmlClasses" :style="max.toCSSVars('max')">
     <list-item
       v-for="(item, index) in items.matrix.flat()"
       :key="'list-item-' + index"
@@ -22,7 +22,7 @@
   name="InfiniteScroll"
   group="Molecules"
   knobs="{
-    toggle: { default: boolean('toggle', true) },
+    toggle: { default: boolean('toggle', false) },
     mirror: { default: boolean('mirror direction', false) },
     gridX: { default: number('items on x-axis', 1) },
     gridY: { default: number('items on y-axis', 10) }
@@ -40,11 +40,18 @@
 </story>
 
 <script>
-import { ipoint } from '@js-basics/vector';
+import { ipoint, IPoint } from '@js-basics/vector';
 import IntersectionObservable from '@/classes/intersection/Observable';
 import IntersectionItemList from '@/classes/intersection/ItemList';
 import ListItem from '@/components/molecules/ListItem';
 import { getElementRect } from '@/utils/element';
+
+IPoint.prototype.toCSSVars = function (name = 'ipoint') {
+  return {
+    [`--${name}-x`]: this.x,
+    [`--${name}-y`]: this.y
+  };
+};
 
 export default {
   components: {
@@ -86,16 +93,18 @@ export default {
   },
 
   data () {
+    const max = ipoint(this.gridX, this.gridY);
     return {
+      max,
+      items: this.createItemList(max),
+      elements: [],
       observable: null,
       subscription: null,
-      items: this.createItemList(),
       activate: false,
       scroll: {
         horizontal: false,
         vertical: false
-      },
-      elements: []
+      }
     };
   },
 
@@ -132,8 +141,8 @@ export default {
   },
 
   methods: {
-    createItemList () {
-      const itemList = new IntersectionItemList(ipoint(this.gridX, this.gridY), this.getTotal());
+    createItemList (max) {
+      const itemList = new IntersectionItemList(max, this.getTotal());
       if (!this.toggle) {
         itemList.update(this.getDeepIndex());
       }
@@ -237,8 +246,8 @@ div.container {
 div.toggle {
   &.vertical {
     grid-row-start: 1;
-    grid-row-end: 11;
-    grid-column-start: 11;
+    grid-row-end: calc(var(--max-y) + 1);
+    grid-column-start: calc(var(--max-x) + 1);
 
     & button {
       position: sticky;
@@ -248,9 +257,9 @@ div.toggle {
   }
 
   &.horizontal {
-    grid-row-start: 11;
+    grid-row-start: calc(var(--max-y) + 1);
     grid-column-start: 1;
-    grid-column-end: 11;
+    grid-column-end: calc(var(--max-x) + 1);
 
     & button {
       position: sticky;

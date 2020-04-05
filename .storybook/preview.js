@@ -31,9 +31,7 @@ addParameters({
 });
 
 addDecorator(withInfo({}));
-addDecorator(StoryRouter({}, {
-
-}));
+addDecorator(StoryRouter({}, {}));
 
 setDefaults({
   header: true,
