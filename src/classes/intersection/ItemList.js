@@ -7,32 +7,42 @@ export default class ItemList {
       return Array.from(Array(max.x).keys()).map((x) => { return { index: ipoint(x, y), position: ipoint(x, y), offset: ipoint() }; });
     });
     this.total = total;
+    this.index = ipoint();
   }
 
-  update (entry) {
-    if (entry.isIntersecting) {
-      const availableRange = ipoint(() => Math.floor((this.length - 1) / 2));
+  getItem (index) {
+    const { x, y } = ipoint(() => Math.round((index + this.length) % this.length));
+    return this.matrix[Number(y)][Number(x)];
+  }
+
+  getCurrentItem () {
+    return this.getItem(this.index);
+  }
+
+  getItemOffset (index) {
+    return ipoint(() => Math.floor(index / this.length) * this.length);
+  }
+
+  update (currentIndex, prevent) {
+    if (!prevent) {
+      const availableRange = ipoint(() => Math.floor((this.length) / 2));
       for (let y = -availableRange.y; y <= availableRange.y; y++) {
         for (let x = -availableRange.x; x <= availableRange.x; x++) {
-          updateItemByEntry(entry, ipoint(x, y), this.matrix, this.length, this.total);
+          this.updateItem(ipoint(() => currentIndex + ipoint(x, y)));
         }
       }
     }
+    this.index = currentIndex;
+    return this;
   }
-}
 
-function updateItemByEntry (entry, pos, matrix, length, total) {
-  const indexOfItem = getIndexOfItem(entry, pos);
-  const index = ipoint(() => Math.round((indexOfItem + length) % length));
-  if (isInRange(indexOfItem, total)) {
-    matrix[index.y][index.x].index = indexOfItem;
-    matrix[index.y][index.x].offset = ipoint(() => Math.floor(indexOfItem / length) * length);
+  updateItem (index) {
+    const item = this.getItem(index);
+    if (isInRange(index, this.total)) {
+      item.index = index;
+      item.offset = this.getItemOffset(index);
+    }
   }
-}
-
-function getIndexOfItem (entry, pos) {
-  const { x, y } = entry.target.index;
-  return ipoint(() => ipoint(x, y) + pos);
 }
 
 function isInRange (indexOfItem, total) {

@@ -4,7 +4,7 @@
       v-for="(item, index) in items.matrix.flat()"
       :key="'list-item-' + index"
       v-bind="item"
-      @mounted="itemAdded"
+      @mounted="el => elements.push(el)"
     >
       <slot name="item" :index="item.index" />
     </list-item>
@@ -44,6 +44,7 @@ import { ipoint } from '@js-basics/vector';
 import IntersectionObservable from '@/classes/intersection/Observable';
 import IntersectionItemList from '@/classes/intersection/ItemList';
 import ListItem from '@/components/molecules/ListItem';
+import { getElementRect } from '@/utils/element';
 
 export default {
   components: {
@@ -70,7 +71,7 @@ export default {
       }
     },
     rootElement: {
-      type: HTMLElement,
+      type: global.HTMLElement,
       default () {
         // global.document.documentElement is global viewport
         return null;
@@ -88,13 +89,13 @@ export default {
     return {
       observable: null,
       subscription: null,
-      items: new IntersectionItemList(ipoint(this.gridX, this.gridY), this.getTotal()),
+      items: this.createItemList(),
       activate: false,
       scroll: {
         horizontal: false,
         vertical: false
       },
-      elements: new Set()
+      elements: []
     };
   },
 
@@ -105,19 +106,21 @@ export default {
         'scroll-horizontal': this.scroll.horizontal,
         'scroll-vertical': this.scroll.vertical
       };
+    },
+    root () {
+      return this.rootElement || this.$el;
     }
   },
 
   mounted () {
-    this.scroll.horizontal = this.$el.scrollWidth > this.$el.clientWidth;
-    this.scroll.vertical = this.$el.scrollHeight > this.$el.clientHeight;
-
-    this.observable = new IntersectionObservable(Array.from(this.elements), {
-      root: this.rootElement || this.$el,
+    this.detectScrollDirections();
+    this.observable = new IntersectionObservable(this.elements, {
+      root: this.root,
       rootMargin: '-50% -50%'
     });
 
     if (!this.toggle) {
+      this.scrollTo(this.getElement(this.items.getCurrentItem().index));
       this.enable();
     }
   },
@@ -129,13 +132,52 @@ export default {
   },
 
   methods: {
+    createItemList () {
+      const itemList = new IntersectionItemList(ipoint(this.gridX, this.gridY), this.getTotal());
+      itemList.update(this.getDeepIndex(), this.toggle);
+      return itemList;
+    },
+
+    detectScrollDirections () {
+      this.scroll.horizontal = this.$el.scrollWidth > this.$el.clientWidth;
+      this.scroll.vertical = this.$el.scrollHeight > this.$el.clientHeight;
+    },
+
     enable () {
-      this.subscription = this.observable.subscribe(entry => this.items.update(entry));
+      this.subscription = this.observable.subscribe((entry) => {
+        if (entry.isIntersecting) {
+          const index = ipoint(entry.target.index);
+          if (!this.items.index.equals(index)) {
+            this.items.update(index);
+            this.setDeepIndex(index);
+          }
+        }
+      });
       this.activate = true;
     },
 
-    itemAdded (el) {
-      this.elements.add(el);
+    getElement (index) {
+      return this.elements.find((el) => {
+        return el.index.equals(index);
+      });
+    },
+
+    getDeepIndex () {
+      const query = this.$route.query;
+      return ipoint(Number(query.x), Number(query.y));
+    },
+
+    setDeepIndex (index) {
+      this.$router.replace({
+        query: JSON.parse(index.toString())
+      });
+    },
+
+    scrollTo (el) {
+      const child = getElementRect(el);
+      const parent = getElementRect(this.root);
+      const scroll = ipoint(() => Math.max(0, child.pos + (child.size / 2) - (parent.size / 2) - parent.pos));
+      this.root.scrollTo(scroll.x, scroll.y);
     },
 
     getTotal () {
@@ -151,7 +193,6 @@ export default {
     }
   }
 };
-
 </script>
 
 <style lang="postcss" scoped>

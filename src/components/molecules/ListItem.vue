@@ -2,6 +2,13 @@
 <script>
 import { ipoint, IPoint } from '@js-basics/vector';
 
+IPoint.prototype.toCSSVars = function (name = 'ipoint') {
+  return {
+    [`--${name}-x`]: this.x,
+    [`--${name}-y`]: this.y
+  };
+};
+
 export default {
   abstract: true,
   props: {
@@ -33,13 +40,13 @@ export default {
     try {
       const slot = this.$slots.default[0];
       slot.data.domProps = {
+        ...slot.data.domProps,
         index: this.index
       };
       slot.data.style = {
-        '--offset-x': this.offset.x,
-        '--offset-y': this.offset.y,
-        '--pos-x': this.position.x,
-        '--pos-y': this.position.y
+        ...slot.data.style,
+        ...this.offset.toCSSVars('offset'),
+        ...this.position.toCSSVars('pos')
       };
       return slot;
     } catch (e) {
@@ -47,6 +54,7 @@ export default {
     }
   }
 };
+
 </script>
 
 <style lang="postcss" scoped>

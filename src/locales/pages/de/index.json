@@ -60,6 +60,10 @@
       }
     },
     {
+      "component": "InfiniteScrollList",
+      "data": {}
+    },
+    {
       "component": "Text",
       "data": {
         "article": {
