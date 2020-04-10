@@ -99,6 +99,17 @@ export default {
       classes[`headline--${this.tag}`] = true;
       return classes;
     }
+  },
+
+  created () {
+    console.log('CREATED: HEADLINE');
+    // console.log(this.$store.state.layout.font);
+    this.$store.dispatch('layout/font', 'font-123');
+    // console.log(this.$store.getters['layout/font']);
+  },
+
+  serverPrefetch () {
+    console.log('SERVER-PREFETCH: HEADLINE');
   }
 };
 </script>

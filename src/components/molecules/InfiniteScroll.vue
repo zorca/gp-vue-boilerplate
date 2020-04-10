@@ -1,19 +1,21 @@
 <template>
   <div class="container" :class="htmlClasses" :style="max.toCSSVars('max')">
-    <list-item
-      v-for="(item, index) in items.matrix.flat()"
-      :key="'list-item-' + index"
-      v-bind="item"
-      @mounted="el => elements.push(el)"
-    >
-      <slot name="item" :index="item.index" />
-    </list-item>
-    <div v-if="toggle && !activate && scroll.vertical" class="toggle horizontal">
-      <slot name="toggle-button" :click="enable" />
-    </div>
+    <div class="wrapper">
+      <list-item
+        v-for="(item, index) in items.matrix.flat()"
+        :key="'list-item-' + index"
+        v-bind="item"
+        @mounted="el => elements.push(el)"
+      >
+        <slot name="item" :index="item.index" />
+      </list-item>
+      <div v-if="toggle && !activate && scroll.vertical" class="toggle horizontal">
+        <slot name="toggle-button" :click="enable" />
+      </div>
 
-    <div v-if="toggle && !activate && scroll.horizontal" class="toggle vertical">
-      <slot name="toggle-button" :click="enable" />
+      <div v-if="toggle && !activate && scroll.horizontal" class="toggle vertical">
+        <slot name="toggle-button" :click="enable" />
+      </div>
     </div>
   </div>
 </template>
@@ -30,7 +32,9 @@
   <infinite-scroll :mirror="mirror" :toggle="toggle" :grid-x="gridX" :grid-y="gridY">
     <template lang="html" v-slot:item="props">
       <div class="item">
+        <div class="content">
         hello {{ props.index.x }} {{ props.index.y }}
+        </div>
       </div>
     </template>
     <template lang="html" v-slot:toggle-button="props">
@@ -144,7 +148,7 @@ export default {
     createItemList (max) {
       const itemList = new IntersectionItemList(max, this.getTotal());
       if (!this.toggle) {
-        itemList.update(this.getDeepIndex());
+        // itemList.update(this.getDeepIndex());
       }
       return itemList;
     },
@@ -155,12 +159,13 @@ export default {
     },
 
     enable () {
+      this.items.setup();
       this.subscription = this.observable.subscribe((entry) => {
         if (entry.isIntersecting) {
-          const index = ipoint(entry.target.index);
-          if (!this.items.index.equals(index)) {
-            this.items.update(index);
-            this.setDeepIndex(index);
+          const pos = ipoint(entry.target.position);
+          if (!this.items.position.equals(pos)) {
+            this.items.update(pos);
+            // this.setDeepIndex(index);
           }
         }
       });
@@ -169,7 +174,7 @@ export default {
 
     getElement (index) {
       return this.elements.find((el) => {
-        return el.index.equals(index);
+        return el.position.equals(index);
       });
     },
 
@@ -211,7 +216,8 @@ export default {
 <style lang="postcss" scoped>
 
 div.container {
-  display: inline-grid;
+  position: relative;
+  display: block;
   width: 100%;
   height: 100vh;
   padding: 0;
@@ -227,7 +233,7 @@ div.container {
   }
 
   &.scroll-vertical:not(.scroll-horizontal) {
-    justify-content: center;
+    justify-content: left;
 
     &.scroll-mirror {
       transform: rotateZ(180deg);
@@ -240,6 +246,27 @@ div.container {
       transform: rotateX(180deg);
       direction: rtl;
     }
+  }
+
+  & .wrapper {
+    position: absolute;
+    left: 50%;
+    display: grid;
+    transform: translate(-50%, 0);
+
+    & .item >>> .content {
+      background: rgba(255, 255, 0, 0.5);
+    }
+
+    & .item:nth-child(2n) >>> .content {
+      height: 16em;
+      background: rgba(255, 0, 255, 0.5);
+    }
+
+    /* & .item:nth-child(4n) >>> .content {
+      height: 23em;
+      background: rgba(0, 60, 255, 0.5);
+    } */
   }
 }
 

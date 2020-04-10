@@ -95,6 +95,11 @@ export default {
       }
     }
 
+  },
+
+  created () {
+    console.log('CRITICAL:', this.critical);
+    // console.log(this);
   }
 };
 </script>

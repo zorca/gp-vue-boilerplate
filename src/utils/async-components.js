@@ -20,8 +20,30 @@ export function getAsyncComponents (componentsData, initialVisibleComponents = 1
     item.data.options = Object.assign(item.data.options, {
       visible: true
     });
+    const a = hydrateWhenIdle(asyncLoad);
+    // console.log('TEST', a);
     return {
-      asyncComponent: hydrateWhenIdle(asyncLoad),
+      asyncComponent: (...args) => {
+        const result = a(...args);
+        if (result.then) {
+          return result.then((r) => {
+            r.default.data = () => {
+              return {
+                critical: true
+              };
+            };
+            // r.default.font = () => {
+            //   return {
+            //     test: 123
+            //   };
+            // };
+            console.log('HIRRA', r);
+            return r;
+          });
+        } else {
+          return result;
+        }
+      },
       data: item.data
     };
   });

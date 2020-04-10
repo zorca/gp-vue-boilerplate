@@ -47,6 +47,7 @@ export default {
 
   data () {
     return {
+      font: '',
       /**
        * Is deactivated when the menu is activated.
        * Serves as workaround for ignoring the "hydrateOnInteraction" when changing error.vue (layout) to default.vue (layout).
@@ -83,6 +84,19 @@ export default {
       this.onDirectionChange(null, true);
     });
   },
+
+  created () {
+    console.log('CREATED: LAYOUT');
+    console.log(this.$store.state.layout.font);
+    this.font = this.$store.state.layout.font;
+    // this.$store.dispatch('layout/font', 'font-123');
+    // console.log(this.$store.getters['layout/font']);
+  },
+
+  serverPrefetch () {
+    console.log('SERVER-PREFETCH: LAYOUT');
+  },
+
   destroyed () {
     this.subscriptions.forEach(subscription => subscription.unsubscribe());
   },
@@ -105,6 +119,9 @@ export default {
   head () {
     const seo = this.$nuxtI18nSeo();
     seo.htmlAttrs[String(DATA_ATTR_PREVENT_SCROLLING)] = this.preventScrolling;
+    seo.link.push({
+      hid: 'font', type: 'font/woff2', rel: 'preload', href: this.$store.state.layout.font
+    });
     return seo;
   }
 };
