@@ -19,24 +19,15 @@ export default class ItemList {
   }
 
   getItem (pos = this.position) {
-    const { x, y } = this.calcPos(pos);
+    const { x, y } = ipoint(() => Math.round((pos + this.length) % this.length));
     return this.matrix[Number(y)][Number(x)];
-  }
-
-  calcPos (index) {
-    return ipoint(() => Math.round((index + this.length) % this.length));
   }
 
   setup () {
     this.matrix.reduce((offsetGlobal, y) => {
-      const offsetLocal = y.map((item, index) => {
+      return y.map((item, index) => {
         item.offset = offsetGlobal[Number(index)];
-        return item.sizeDiff;
-      });
-      console.log(offsetLocal);
-
-      return offsetLocal.map((size, index) => {
-        return ipoint(() => size + offsetGlobal[Number(index)]);
+        return ipoint(() => item.sizeDiff + offsetGlobal[Number(index)]);
       });
     }, new Array(this.length.x).fill(ipoint()));
   }
