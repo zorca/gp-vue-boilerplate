@@ -19,21 +19,21 @@ export default class ItemList {
   }
 
   getItem (pos = this.position) {
-    const { x, y } = ipoint(() => Math.round((pos + this.length) % this.length));
+    const { x, y } = this.calcPos(pos);
     return this.matrix[Number(y)][Number(x)];
   }
 
-  getItemOffset (pos) {
-    return ipoint(() => Math.floor(pos / this.length) * this.length);
+  calcPos (index) {
+    return ipoint(() => Math.round((index + this.length) % this.length));
   }
 
   setup () {
     this.matrix.reduce((offsetGlobal, y) => {
-      const offsetLocal = y.reduce((offsetLocal, item, index) => {
+      const offsetLocal = y.map((item, index) => {
         item.offset = offsetGlobal[Number(index)];
-        offsetLocal[Number(index)] = item.sizeDiff;
-        return offsetLocal;
-      }, new Array(this.length.x).fill(ipoint()));
+        return item.sizeDiff;
+      });
+      console.log(offsetLocal);
 
       return offsetLocal.map((size, index) => {
         return ipoint(() => size + offsetGlobal[Number(index)]);
@@ -43,44 +43,52 @@ export default class ItemList {
 
   update (currentIndex) {
     const availableRange = ipoint(() => Math.floor((this.length) / 2));
-    for (let x = -availableRange.x; x <= availableRange.x; x++) {
-      const currentItem = this.getItem(ipoint(() => currentIndex + ipoint(x, 0)));
-      let negSize = ipoint(() => currentItem.offset + currentItem.sizeDiff);
-      let posSize = currentItem.offset;
+    // for (let x = -availableRange.x; x <= availableRange.x; x++) {
 
-      for (let y = 0; y <= availableRange.y; y++) {
-        // // hello
-        const rangeIndexNeg = ipoint(() => currentIndex - ipoint(x, y));
-        const oNeg = this.getItemOffset(rangeIndexNeg);
+    const x = 0;
+    const currentItem = this.getItem(currentIndex);
+    let negSize = ipoint(() => currentItem.offset + currentItem.sizeDiff);
+    let posSize = currentItem.offset;
 
-        // if (isInRange(rangeIndexNeg, this.total)) {
-        const rangeItemNeg = this.getItem(rangeIndexNeg);
-        negSize = ipoint(() => negSize - rangeItemNeg.sizeDiff);
-        rangeItemNeg.offset = ipoint(() => negSize + oNeg);
-        // // }
-
-        const rangeIndexPos = ipoint(() => currentIndex + ipoint(x, y));
-        const oPos = this.getItemOffset(rangeIndexPos);
-        // if (isInRange(rangeIndexPos, this.total)) {
-        const rangeItemPos = this.getItem(rangeIndexPos);
-        console.log(oPos.y);
-        rangeItemPos.offset = ipoint(() => posSize + oPos);
-        // rangeItemPos.index = ipoint(() => rangeItemPos + rangeIndexPos + rangeItemPos.index);
-        posSize = ipoint(() => posSize + rangeItemPos.sizeDiff);
-        // }
-      }
+    for (let y = 0; y <= availableRange.y; y++) {
+      const offset = ipoint(x, y);
+      negSize = this.updateItem(currentItem, offset, negSize, -1);
+      posSize = this.updateItem(currentItem, offset, posSize, 1);
     }
-    this.position = currentIndex;
+    // }
+    this.position = currentItem.position;
     return this;
   }
 
-  updateItem (index) {
-    const item = this.getItem(index);
-    if (isInRange(index, this.total)) {
-      item.index = index;
-      item.offset = this.getItemOffset(index);
+  updateItem (item, offset, size, direction) {
+    offset = ipoint(() => offset * direction);
+    const currentIndex = ipoint(() => item.index + offset);
+
+    if (isInRange(currentIndex, this.total)) {
+      const currentItem = this.getItem(currentIndex);
+      // when to move an element the value should be -/+ item number
+      const xtraOffset = ipoint(() => Math.floor((item.position + offset) / this.length) * this.length);
+
+      if (direction < 0) {
+        size = ipoint(() => size + currentItem.sizeDiff * direction);
+        currentItem.offset = ipoint(() => size + xtraOffset);
+      } else if (direction > 0) {
+        currentItem.offset = ipoint(() => size + xtraOffset);
+        size = ipoint(() => size + currentItem.sizeDiff * direction);
+      }
+
+      currentItem.index = ipoint(() => item.index + offset);
     }
+    return size;
   }
+
+  // updateItem (index) {
+  //   const item = this.getItem(index);
+  //   if (isInRange(index, this.total)) {
+  //     item.index = index;
+  //     item.offset = this.getItemOffset(index);
+  //   }
+  // }
 }
 
 function isInRange (indexOfItem, total) {

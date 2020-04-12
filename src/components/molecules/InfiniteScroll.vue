@@ -26,7 +26,7 @@
   knobs="{
     toggle: { default: boolean('toggle', false) },
     mirror: { default: boolean('mirror direction', false) },
-    gridX: { default: number('items on x-axis', 1) },
+    gridX: { default: number('items on x-axis', 3) },
     gridY: { default: number('items on y-axis', 10) }
   }">
   <infinite-scroll :mirror="mirror" :toggle="toggle" :grid-x="gridX" :grid-y="gridY">
@@ -129,7 +129,7 @@ export default {
     this.detectScrollDirections();
     this.observable = new IntersectionObservable(this.elements, {
       root: this.root,
-      rootMargin: '-50% -50%'
+      rootMargin: '-50% 0%'
     });
 
     if (!this.toggle) {
@@ -162,11 +162,11 @@ export default {
       this.items.setup();
       this.subscription = this.observable.subscribe((entry) => {
         if (entry.isIntersecting) {
-          const pos = ipoint(entry.target.position);
-          if (!this.items.position.equals(pos)) {
-            this.items.update(pos);
-            // this.setDeepIndex(index);
-          }
+          const pos = ipoint(entry.target.index);
+          // if (!this.items.position.equals(pos)) {
+          this.items.update(pos);
+          // this.setDeepIndex(index);
+          // }
         }
       });
       this.activate = true;
@@ -263,10 +263,10 @@ div.container {
       background: rgba(255, 0, 255, 0.5);
     }
 
-    /* & .item:nth-child(4n) >>> .content {
+    & .item:nth-child(3n +1) >>> .content {
       height: 23em;
       background: rgba(0, 60, 255, 0.5);
-    } */
+    }
   }
 }
 
