@@ -32,9 +32,9 @@ export default {
       }
     },
     offset: {
-      type: IPoint,
+      type: Point,
       default () {
-        return ipoint();
+        return point();
       }
     },
     sizeDiff: {
@@ -49,37 +49,45 @@ export default {
         return point();
       }
     },
-    offsetYGlobal: {
-      type: Array,
+    sizeResolver: {
+      type: Function,
       default () {
-        return [];
+        return Promise.resolve;
       }
     }
   },
 
   data () {
     return {
-
+      height: `${10 + rand()}em`
     };
+  },
+
+  watch: {
+    sizeResolver: {
+      handler (value) {
+        console.log('offset', value);
+      }
+    }
   },
 
   mounted () {
     this.$el.position = this.position;
-    this.updateSize();
+    this.$el.querySelector('.content').style.height = this.height;
+    // setTimeout(() => {
+    this.size.x = this.$el.scrollWidth / this.$el.clientWidth;
+    this.size.y = this.$el.scrollHeight / this.$el.clientHeight;
+    this.sizeDiff.calc(() => this.size - ipoint(1, 1));
     this.$emit('mounted', this.$el);
+    // });
   },
 
-  methods: {
-    updateSize () {
-      this.size.x = this.$el.querySelector('.content').clientWidth / this.$el.clientWidth;
-      this.size.y = this.$el.querySelector('.content').clientHeight / this.$el.clientHeight;
-      const diff = ipoint(() => this.size - ipoint(1, 1));
-      this.sizeDiff.calc(() => +diff);
-      console.log('size', this.size.x, this.size.y, 'size diff', this.sizeDiff.x, this.sizeDiff.y);
-    }
+  updated () {
+    console.log('UPDATE');
   },
 
   render () {
+    console.log('RENDER');
     try {
       const slot = this.$slots.default[0];
       slot.data.domProps = {
@@ -99,6 +107,10 @@ export default {
   }
 };
 
+function rand (min = 0, max = 20) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 </script>
 
 <style lang="postcss" scoped>
@@ -107,6 +119,7 @@ div.item {
   --y: calc((var(--offset-y)) * 100%);
 
   display: flex;
+  flex-shrink: 0;
   grid-row-start: calc(var(--pos-y) + 1);
   grid-column-start: calc(var(--pos-x) + 1);
   align-items: flex-start;

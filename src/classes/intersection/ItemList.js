@@ -8,12 +8,13 @@ export default class ItemList {
         return {
           index: ipoint(x, y),
           position: ipoint(x, y),
-          offset: ipoint(-1, 0),
+          offset: point(0, 0),
           size: point(),
           sizeDiff: point()
         };
       });
     });
+    this.flat = this.matrix.flat();
     this.total = total;
     this.position = ipoint();
   }
@@ -26,7 +27,7 @@ export default class ItemList {
   setup () {
     this.matrix.reduce((offsetGlobal, y) => {
       return y.map((item, index) => {
-        item.offset = offsetGlobal[Number(index)];
+        item.offset = point(() => +offsetGlobal[Number(index)]);
         return ipoint(() => item.sizeDiff + offsetGlobal[Number(index)]);
       });
     }, new Array(this.length.x).fill(ipoint()));
@@ -54,7 +55,6 @@ export default class ItemList {
   updateItem (item, offset, size, direction) {
     offset = ipoint(() => offset * direction);
     const currentIndex = ipoint(() => item.index + offset);
-
     if (isInRange(currentIndex, this.total)) {
       const currentItem = this.getItem(currentIndex);
       // when to move an element the value should be -/+ item number
@@ -62,13 +62,17 @@ export default class ItemList {
 
       if (direction < 0) {
         size = ipoint(() => size + currentItem.sizeDiff * direction);
-        currentItem.offset = ipoint(() => size + xtraOffset);
+        currentItem.offset.calc(() => size + xtraOffset);
       } else if (direction > 0) {
-        currentItem.offset = ipoint(() => size + xtraOffset);
+        currentItem.offset.calc(() => size + xtraOffset);
         size = ipoint(() => size + currentItem.sizeDiff * direction);
       }
+      const newIndex = ipoint(() => item.index + offset);
 
-      currentItem.index = ipoint(() => item.index + offset);
+      if (!newIndex.equals(currentItem.index)) {
+        console.log(newIndex.y, currentItem.index.y);
+        currentItem.index = newIndex;
+      }
     }
     return size;
   }

@@ -1,9 +1,9 @@
 <template>
-  <div class="container" :class="htmlClasses" :style="max.toCSSVars('max')">
+  <div class="container scroll-vertical" :style="max.toCSSVars('max')">
     <div class="wrapper">
       <list-item
-        v-for="(item, index) in items.matrix.flat()"
-        :key="'list-item-' + index"
+        v-for="(item) in items.matrix.flat()"
+        :key="item.position.y"
         v-bind="item"
         @mounted="el => elements.push(el)"
       >
@@ -129,13 +129,15 @@ export default {
     this.detectScrollDirections();
     this.observable = new IntersectionObservable(this.elements, {
       root: this.root,
-      rootMargin: '-50% 0%'
+      rootMargin: `${-50 * Number(this.scroll.vertical)}% ${-50 * Number(this.scroll.horizontal)}%`
     });
 
-    if (!this.toggle) {
-      this.scrollTo(this.getElement(this.items.getItem().index));
-      this.enable();
-    }
+    this.$nextTick(() => {
+      if (!this.toggle) {
+        this.scrollTo(this.getElement(this.items.getItem().index));
+        this.enable();
+      }
+    });
   },
 
   destroyed () {
@@ -154,8 +156,8 @@ export default {
     },
 
     detectScrollDirections () {
-      this.scroll.horizontal = this.$el.scrollWidth > this.$el.clientWidth;
-      this.scroll.vertical = this.$el.scrollHeight > this.$el.clientHeight;
+      this.scroll.horizontal = false;// this.$el.scrollWidth > this.$el.clientWidth;
+      this.scroll.vertical = true;// this.$el.scrollHeight > this.$el.clientHeight;
     },
 
     enable () {
@@ -216,7 +218,6 @@ export default {
 <style lang="postcss" scoped>
 
 div.container {
-  position: relative;
   display: block;
   width: 100%;
   height: 100vh;
@@ -224,8 +225,38 @@ div.container {
   margin: 0;
   overflow: auto;
 
+  & .wrapper {
+    display: flex;
+    flex-wrap: wrap;
+
+    & .item >>> .content {
+      background: rgba(255, 255, 0, 0.5);
+    }
+
+    & .item:nth-child(2n) >>> .content {
+      background: rgba(255, 0, 255, 0.5);
+    }
+
+    & .item:nth-child(5n) >>> .content {
+      background: rgba(0, 60, 255, 0.5);
+    }
+  }
+
   &.scroll-horizontal:not(.scroll-vertical) {
-    align-content: center;
+    /* align-content: center; */
+
+    & .wrapper {
+      flex-direction: column;
+      height: 480px;
+    }
+
+    & .item:nth-child(2n) >>> .content {
+      min-width: 400px;
+    }
+
+    & .item:nth-child(5n) >>> .content {
+      min-width: 500px;
+    }
 
     &.scroll-mirror {
       direction: rtl;
@@ -233,7 +264,20 @@ div.container {
   }
 
   &.scroll-vertical:not(.scroll-horizontal) {
-    justify-content: left;
+    /* justify-content: center; */
+
+    & .wrapper {
+      flex-direction: row;
+      width: 900px;
+    }
+
+    & .item:nth-child(2n) >>> .content {
+      height: 16em;
+    }
+
+    & .item:nth-child(5n) >>> .content {
+      height: 23em;
+    }
 
     &.scroll-mirror {
       transform: rotateZ(180deg);
@@ -248,26 +292,11 @@ div.container {
     }
   }
 
-  & .wrapper {
+  /* &.scroll-vertical .wrapper {
     position: absolute;
     left: 50%;
-    display: grid;
     transform: translate(-50%, 0);
-
-    & .item >>> .content {
-      background: rgba(255, 255, 0, 0.5);
-    }
-
-    & .item:nth-child(2n) >>> .content {
-      height: 16em;
-      background: rgba(255, 0, 255, 0.5);
-    }
-
-    & .item:nth-child(3n +1) >>> .content {
-      height: 23em;
-      background: rgba(0, 60, 255, 0.5);
-    }
-  }
+  } */
 }
 
 div.toggle {
