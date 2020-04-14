@@ -160,13 +160,17 @@ export default {
       this.scroll.vertical = true;// this.$el.scrollHeight > this.$el.clientHeight;
     },
 
+    getScrollDirection () {
+      return ipoint(Number(this.scroll.horizontal), Number(this.scroll.vertical));
+    },
+
     enable () {
       this.items.setup();
       this.subscription = this.observable.subscribe((entry) => {
         if (entry.isIntersecting) {
-          const pos = ipoint(entry.target.index);
+          const pos = ipoint(entry.target.position);
           // if (!this.items.position.equals(pos)) {
-          this.items.update(pos);
+          this.items.update(pos, this.getScrollDirection());
           // this.setDeepIndex(index);
           // }
         }

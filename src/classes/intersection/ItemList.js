@@ -8,8 +8,7 @@ export default class ItemList {
         return {
           index: ipoint(x, y),
           position: ipoint(x, y),
-          offset: point(0, 0),
-          size: point(),
+          offset: ipoint(0, 0),
           sizeDiff: point()
         };
       });
@@ -19,7 +18,7 @@ export default class ItemList {
     this.position = ipoint();
   }
 
-  getItem (pos = this.position) {
+  getItem (pos = ipoint()) {
     const { x, y } = ipoint(() => Math.round((pos + this.length) % this.length));
     return this.matrix[Number(y)][Number(x)];
   }
@@ -27,53 +26,47 @@ export default class ItemList {
   setup () {
     this.matrix.reduce((offsetGlobal, y) => {
       return y.map((item, index) => {
-        item.offset = point(() => +offsetGlobal[Number(index)]);
-        return ipoint(() => item.sizeDiff + offsetGlobal[Number(index)]);
+        item.offset = offsetGlobal[Number(index)];
+        return ipoint(() => item.sizeDiff + item.offset);
       });
-    }, new Array(this.length.x).fill(ipoint()));
+    }, [
+      ...Array(this.length.x)
+    ].map((_, i) => ipoint()));
   }
 
-  update (currentIndex) {
-    const availableRange = ipoint(() => Math.floor((this.length) / 2));
-    // for (let x = -availableRange.x; x <= availableRange.x; x++) {
-
-    const x = 0;
+  update (currentIndex, scrollDirection) {
+    const availableRange = ipoint(() => Math.floor((this.length) / 2) * scrollDirection);
     const currentItem = this.getItem(currentIndex);
+
     let negSize = ipoint(() => currentItem.offset + currentItem.sizeDiff);
     let posSize = currentItem.offset;
 
     for (let y = 0; y <= availableRange.y; y++) {
-      const offset = ipoint(x, y);
-      negSize = this.updateItem(currentItem, offset, negSize, -1);
-      posSize = this.updateItem(currentItem, offset, posSize, 1);
+      for (let x = 0; x <= availableRange.x; x++) {
+        const offset = ipoint(x, y);
+        negSize = this.updateItem(currentItem, offset, negSize, -1);
+        posSize = this.updateItem(currentItem, offset, posSize, 1);
+      }
     }
-    // }
-    this.position = currentItem.position;
-    return this;
   }
 
   updateItem (item, offset, size, direction) {
     offset = ipoint(() => offset * direction);
     const currentIndex = ipoint(() => item.index + offset);
-    if (isInRange(currentIndex, this.total)) {
-      const currentItem = this.getItem(currentIndex);
-      // when to move an element the value should be -/+ item number
+    const currentItem = this.getItem(currentIndex);
+    const extendedSize = currentItem.sizeDiff;
+
+    if (isInRange(currentIndex, this.total) && !currentIndex.equals(currentItem.index)) {
+      currentItem.index = currentIndex;
+      // when to move an element the value should be -/+ items length
       const xtraOffset = ipoint(() => Math.floor((item.position + offset) / this.length) * this.length);
-
       if (direction < 0) {
-        size = ipoint(() => size + currentItem.sizeDiff * direction);
-        currentItem.offset.calc(() => size + xtraOffset);
+        currentItem.offset = ipoint(() => size + xtraOffset + extendedSize * direction);
       } else if (direction > 0) {
-        currentItem.offset.calc(() => size + xtraOffset);
-        size = ipoint(() => size + currentItem.sizeDiff * direction);
-      }
-      const newIndex = ipoint(() => item.index + offset);
-
-      if (!newIndex.equals(currentItem.index)) {
-        console.log(newIndex.y, currentItem.index.y);
-        currentItem.index = newIndex;
+        currentItem.offset = ipoint(() => size + xtraOffset);
       }
     }
+    size = ipoint(() => size + extendedSize * direction);
     return size;
   }
 

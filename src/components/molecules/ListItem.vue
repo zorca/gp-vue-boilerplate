@@ -32,9 +32,9 @@ export default {
       }
     },
     offset: {
-      type: Point,
+      type: IPoint,
       default () {
-        return point();
+        return ipoint();
       }
     },
     sizeDiff: {
@@ -42,33 +42,18 @@ export default {
       default () {
         return point();
       }
-    },
-    size: {
-      type: Point,
-      default () {
-        return point();
-      }
-    },
-    sizeResolver: {
-      type: Function,
-      default () {
-        return Promise.resolve;
-      }
     }
   },
 
   data () {
     return {
-      height: `${10 + rand()}em`
+      height: `${10 + rand()}em`,
+      size: point()
     };
   },
 
   watch: {
-    sizeResolver: {
-      handler (value) {
-        console.log('offset', value);
-      }
-    }
+
   },
 
   mounted () {
@@ -83,22 +68,16 @@ export default {
   },
 
   updated () {
-    console.log('UPDATE');
+    // console.log('UPDATE');
   },
 
   render () {
-    console.log('RENDER');
+    // console.log('RENDER');
     try {
       const slot = this.$slots.default[0];
-      slot.data.domProps = {
-        ...slot.data.domProps,
-        index: this.index
-      };
       slot.data.style = {
         ...slot.data.style,
-        ...this.position.toCSSVars('pos'),
         ...this.offset.toCSSVars('offset')
-        // ...this.index.toCSSVars('index')
       };
       return slot;
     } catch (e) {
