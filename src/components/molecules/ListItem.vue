@@ -42,6 +42,12 @@ export default {
       default () {
         return point();
       }
+    },
+    enlargement: {
+      type: Promise,
+      default () {
+        return Promise.resolve(ipoint(0, 0));
+      }
     }
   },
 
@@ -53,18 +59,20 @@ export default {
   },
 
   watch: {
-
+    index: {
+      handler () {
+        console.log('ACG');
+      }
+    }
   },
 
   mounted () {
     this.$el.position = this.position;
     this.$el.querySelector('.content').style.height = this.height;
-    // setTimeout(() => {
     this.size.x = this.$el.scrollWidth / this.$el.clientWidth;
     this.size.y = this.$el.scrollHeight / this.$el.clientHeight;
     this.sizeDiff.calc(() => this.size - ipoint(1, 1));
     this.$emit('mounted', this.$el);
-    // });
   },
 
   updated () {

@@ -9,7 +9,8 @@ export default class ItemList {
           index: ipoint(x, y),
           position: ipoint(x, y),
           offset: ipoint(0, 0),
-          sizeDiff: point()
+          sizeDiff: point(),
+          enlargement: Promise.resolve(ipoint())
         };
       });
     });
@@ -54,19 +55,20 @@ export default class ItemList {
     offset = ipoint(() => offset * direction);
     const currentIndex = ipoint(() => item.index + offset);
     const currentItem = this.getItem(currentIndex);
-    const extendedSize = currentItem.sizeDiff;
+    const sizeDiff = currentItem.sizeDiff;
 
     if (isInRange(currentIndex, this.total) && !currentIndex.equals(currentItem.index)) {
       currentItem.index = currentIndex;
+      console.log('UPS');
       // when to move an element the value should be -/+ items length
       const xtraOffset = ipoint(() => Math.floor((item.position + offset) / this.length) * this.length);
       if (direction < 0) {
-        currentItem.offset = ipoint(() => size + xtraOffset + extendedSize * direction);
+        currentItem.offset = ipoint(() => size + xtraOffset + sizeDiff * direction);
       } else if (direction > 0) {
         currentItem.offset = ipoint(() => size + xtraOffset);
       }
     }
-    size = ipoint(() => size + extendedSize * direction);
+    size = ipoint(() => size + sizeDiff * direction);
     return size;
   }
 
