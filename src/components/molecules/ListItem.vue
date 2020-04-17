@@ -68,7 +68,7 @@ export default {
 
   mounted () {
     this.$el.position = this.position;
-    this.$el.querySelector('.content').style.height = this.height;
+    // this.$el.querySelector('.content').style.height = this.height;
     this.size.x = this.$el.scrollWidth / this.$el.clientWidth;
     this.size.y = this.$el.scrollHeight / this.$el.clientHeight;
     this.sizeDiff.calc(() => this.size - ipoint(1, 1));

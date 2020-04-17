@@ -1,19 +1,19 @@
 <template>
-  <div class="container scroll-vertical" :style="max.toCSSVars('max')">
+  <div class="container" :class="htmlClasses" :style="max.toCSSVars('max')">
     <div class="wrapper">
       <list-item
-        v-for="(item) in items.matrix.flat()"
+        v-for="(item) in list.matrix.flat()"
         :key="item.position.y"
         v-bind="item"
         @mounted="el => elements.push(el)"
       >
         <slot name="item" :index="item.index" />
       </list-item>
-      <div v-if="toggle && !activate && scroll.vertical" class="toggle horizontal">
+      <div v-if="toggle && !activate && !scrollHorizontal" class="toggle horizontal">
         <slot name="toggle-button" :click="enable" />
       </div>
 
-      <div v-if="toggle && !activate && scroll.horizontal" class="toggle vertical">
+      <div v-if="toggle && !activate && scrollHorizontal" class="toggle vertical">
         <slot name="toggle-button" :click="enable" />
       </div>
     </div>
@@ -26,10 +26,10 @@
   knobs="{
     toggle: { default: boolean('toggle', false) },
     mirror: { default: boolean('mirror direction', false) },
-    gridX: { default: number('items on x-axis', 3) },
-    gridY: { default: number('items on y-axis', 10) }
+    slots: { default: number('number of slots', 3) }, // slots
+    items: { default: number('number of items per slot', 10) } // items
   }">
-  <infinite-scroll :mirror="mirror" :toggle="toggle" :grid-x="gridX" :grid-y="gridY">
+  <infinite-scroll :mirror="mirror" :scroll-horizontal="Boolean(false)" :toggle="toggle" :slots="slots" :items="items">
     <template lang="html" v-slot:item="props">
       <div class="item">
         <div class="content">
@@ -69,13 +69,19 @@ export default {
         return false;
       }
     },
-    gridX: {
+    scrollHorizontal: {
+      type: Boolean,
+      default () {
+        return false;
+      }
+    },
+    slots: {
       type: Number,
       default () {
         return 10;
       }
     },
-    gridY: {
+    items: {
       type: Number,
       default () {
         return 10;
@@ -97,10 +103,10 @@ export default {
   },
 
   data () {
-    const max = ipoint(this.gridX, this.gridY);
+    const max = ipoint(this.items, this.slots);
     return {
       max,
-      items: this.createItemList(max),
+      list: null,
       elements: [],
       observable: null,
       subscription: null,
@@ -116,8 +122,8 @@ export default {
     htmlClasses () {
       return {
         'scroll-mirror': this.mirror,
-        'scroll-horizontal': this.scroll.horizontal,
-        'scroll-vertical': this.scroll.vertical
+        'scroll-horizontal': this.scrollHorizontal,
+        'scroll-vertical': !this.scrollHorizontal
       };
     },
     root () {
@@ -125,16 +131,20 @@ export default {
     }
   },
 
-  mounted () {
+  created () {
     this.detectScrollDirections();
+    this.list = this.createItemList(this.max);
+  },
+
+  mounted () {
     this.observable = new IntersectionObservable(this.elements, {
       root: this.root,
-      rootMargin: `${-50 * Number(this.scroll.vertical)}% ${-50 * Number(this.scroll.horizontal)}%`
+      rootMargin: `${-50 * Number(!this.scrollHorizontal)}% ${-50 * Number(this.scrollHorizontal)}%`
     });
 
     this.$nextTick(() => {
       if (!this.toggle) {
-        this.scrollTo(this.getElement(this.items.getItem().index));
+        // this.scrollTo(this.getElement(this.list.getItem().index));
         this.enable();
       }
     });
@@ -148,7 +158,7 @@ export default {
 
   methods: {
     createItemList (max) {
-      const itemList = new IntersectionItemList(max, this.getTotal());
+      const itemList = new IntersectionItemList(max, this.getTotal(), this.getScrollDirection());
       if (!this.toggle) {
         // itemList.update(this.getDeepIndex());
       }
@@ -156,21 +166,21 @@ export default {
     },
 
     detectScrollDirections () {
-      this.scroll.horizontal = false;// this.$el.scrollWidth > this.$el.clientWidth;
-      this.scroll.vertical = true;// this.$el.scrollHeight > this.$el.clientHeight;
+      this.scroll.horizontal = true;
+      this.scroll.vertical = false;
     },
 
     getScrollDirection () {
-      return ipoint(Number(this.scroll.horizontal), Number(this.scroll.vertical));
+      return ipoint(Number(this.scrollHorizontal), Number(!this.scrollHorizontal));
     },
 
     enable () {
-      this.items.setup();
+      this.list.setup();
       this.subscription = this.observable.subscribe((entry) => {
         if (entry.isIntersecting) {
           const pos = ipoint(entry.target.position);
-          // if (!this.items.position.equals(pos)) {
-          this.items.update(pos, this.getScrollDirection());
+          // if (!this.list.position.equals(pos)) {
+          this.list.update(pos, this.getScrollDirection());
           // this.setDeepIndex(index);
           // }
         }
@@ -207,10 +217,10 @@ export default {
     getTotal () {
       let x = 1;
       let y = 1;
-      if (this.gridX > 1) {
+      if (this.items > 1) {
         x = Infinity;
       }
-      if (this.gridY > 1) {
+      if (this.slots > 1) {
         y = Infinity;
       }
       return ipoint(x, y);
@@ -258,8 +268,8 @@ div.container {
       min-width: 400px;
     }
 
-    & .item:nth-child(5n) >>> .content {
-      min-width: 500px;
+    & .item:nth-child(6n) >>> .content {
+      min-width: 600px;
     }
 
     &.scroll-mirror {
