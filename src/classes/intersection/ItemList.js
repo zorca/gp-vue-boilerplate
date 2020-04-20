@@ -1,32 +1,12 @@
-import { ipoint, point } from '@js-basics/vector';
-
+import { ipoint } from '@js-basics/vector';
+import Item from '@/classes/intersection/Item';
 export default class ItemList {
-  constructor (max, total, scrollDirection) {
-    const scrollAxis = scrollDirection.x > scrollDirection.y ? 'x' : 'y';
-    const staticAxis = scrollDirection.x < scrollDirection.y ? 'x' : 'y';
-    max = ipoint({ [scrollAxis]: max.x, [staticAxis]: max.y });
-
-    this.length = max;
-    this.matrix = Array.from(Array(max[String(scrollAxis)]).keys()).map((slot) => {
-      return Array.from(Array(max[String(staticAxis)]).keys()).map((item) => {
-        return {
-          index: ipoint({ [scrollAxis]: slot, [staticAxis]: item }),
-          position: ipoint({ [scrollAxis]: slot, [staticAxis]: item }),
-          offset: ipoint(0, 0),
-          sizeDiff: point(),
-          enlargement: Promise.resolve(ipoint())
-        };
-      });
-    });
-    this.scrollAxis = scrollAxis;
-    this.staticAxis = staticAxis;
+  constructor (max, total, direction) {
+    this.direction = direction;
+    this.axis = getAxis(this.direction);
+    this.max = ipoint({ [this.axis.scroll]: max.x, [this.axis.static]: max.y });
+    this.matrix = getMatrix(this.max, this.axis);
     this.total = total;
-    this.position = ipoint();
-  }
-
-  getItem (pos = ipoint()) {
-    const index = ipoint(() => Math.round((pos + this.length) % this.length));
-    return this.matrix[index[this.scrollAxis]][index[this.staticAxis]];
   }
 
   setup () {
@@ -38,48 +18,70 @@ export default class ItemList {
     }, []);
   }
 
-  update (currentIndex, scrollDirection) {
-    const availableRange = ipoint(() => Math.floor((this.length) / 2) * scrollDirection);
-    const currentItem = this.getItem(currentIndex);
+  update (index) {
+    const centeredItem = this.getItem(index);
+    let accumulatedSlotOffsets = [
+      ipoint(() => centeredItem.offset + centeredItem.sizeDiff),
+      centeredItem.offset
+    ];
 
-    let negSize = ipoint(() => currentItem.offset + currentItem.sizeDiff);
-    let posSize = currentItem.offset;
-
-    for (let y = 0; y <= availableRange.y; y++) {
-      for (let x = 0; x <= availableRange.x; x++) {
-        const offset = ipoint(x, y);
-        negSize = this.updateItem(currentItem, offset, negSize, -1);
-        posSize = this.updateItem(currentItem, offset, posSize, 1);
-      }
+    const availableRange = ipoint(() => Math.floor((this.max) / 2) * this.direction);
+    for (let item = 0; item <= availableRange[this.axis.scroll]; item++) {
+      const bidirectionalOffset = ipoint({ [this.axis.scroll]: item, [this.axis.static]: 0 });
+      accumulatedSlotOffsets = this.updateBidirectional(centeredItem, bidirectionalOffset, accumulatedSlotOffsets);
     }
   }
 
-  updateItem (item, matrixOffset, size, direction) {
-    matrixOffset = ipoint(() => matrixOffset * direction);
-    const currentIndex = ipoint(() => item.index + matrixOffset);
-    const currentItem = this.getItem(currentIndex);
-    const sizeDiff = currentItem.sizeDiff;
-
-    if (!currentIndex.equals(currentItem.index) && isInRange(currentIndex, this.total)) {
-      currentItem.index = currentIndex;
-      const currentOffset = ipoint(() => size + Math.floor((item.position + matrixOffset) / this.length) * this.length);
-      if (direction < 0) {
-        currentItem.offset = ipoint(() => currentOffset + sizeDiff * direction);
-      } else if (direction > 0) {
-        currentItem.offset = currentOffset;
-      }
-    }
-    size = ipoint(() => size + sizeDiff * direction);
-    return size;
+  updateBidirectional (centeredItem, bidirectionalOffset, accumulatedSlotOffsets) {
+    return accumulatedSlotOffsets.map((accumulatedSlotOffset, i) => {
+      const direction = i * 2 - 1;
+      const offset = ipoint(() => bidirectionalOffset * direction);
+      const position = ipoint(() => centeredItem.position + offset);
+      const index = ipoint(() => centeredItem.index + offset);
+      return this.updateItem(index, position, accumulatedSlotOffset, direction);
+    });
   }
 
-  // updateItem (index) {
-  //   const item = this.getItem(index);
-  //   if (isInRange(index, this.total)) {
-  //     item.index = index;
-  //     item.offset = this.getItemOffset(index);
-  //   }
-  // }
+  updateItem (index, position, accumulatedSlotOffset, direction) {
+    const item = this.getItem(index);
+    const size = ipoint(() => item.sizeDiff * direction);
+
+    if (!index.equals(item.index) && isInRange(index, this.total)) {
+      const xtraOffset = ipoint(() => Math.floor(position / this.max) * this.max);
+      item.offset = calcItemOffset(direction, accumulatedSlotOffset, xtraOffset, size);
+      item.index = index;
+    }
+    return ipoint(() => accumulatedSlotOffset + size);
+  }
+
+  getItem (pos = ipoint()) {
+    const index = ipoint(() => Math.round((pos + this.max) % this.max));
+    return this.matrix[index[this.axis.scroll]][index[this.axis.static]];
+  }
+}
+
+function calcItemOffset (direction, accumulatedSlotOffset, xtraOffset, size) {
+  direction = (direction * -1 + 1) / 2;
+  return ipoint(() => accumulatedSlotOffset + xtraOffset + size * direction);
+}
+
+const axis = [
+  'x', 'y'
+];
+
+function getAxis (direction) {
+  return {
+    scroll: axis[Number(direction.x < direction.y)],
+    static: axis[Number(direction.x > direction.y)]
+  };
+}
+
+function getMatrix (max, axis) {
+  return Array.from(Array(max[String(axis.scroll)]).keys()).map((slot) => {
+    return Array.from(Array(max[String(axis.static)]).keys()).map((item) => {
+      return new Item(ipoint({ [axis.scroll]: slot, [axis.static]: item }));
+    });
+  });
 }
 
 function isInRange (indexOfItem, total) {

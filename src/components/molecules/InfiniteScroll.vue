@@ -29,7 +29,7 @@
     slots: { default: number('number of slots', 3) }, // slots
     items: { default: number('number of items per slot', 10) } // items
   }">
-  <infinite-scroll :mirror="mirror" :scroll-horizontal="Boolean(false)" :toggle="toggle" :slots="slots" :items="items">
+  <infinite-scroll :mirror="mirror" :scroll-horizontal="Boolean(true)" :toggle="toggle" :slots="slots" :items="items">
     <template lang="html" v-slot:item="props">
       <div class="item">
         <div class="content">
@@ -106,15 +106,11 @@ export default {
     const max = ipoint(this.items, this.slots);
     return {
       max,
-      list: null,
+      list: this.createItemList(max),
       elements: [],
       observable: null,
       subscription: null,
-      activate: false,
-      scroll: {
-        horizontal: false,
-        vertical: false
-      }
+      activate: false
     };
   },
 
@@ -131,23 +127,18 @@ export default {
     }
   },
 
-  created () {
-    this.detectScrollDirections();
-    this.list = this.createItemList(this.max);
-  },
-
   mounted () {
     this.observable = new IntersectionObservable(this.elements, {
       root: this.root,
       rootMargin: `${-50 * Number(!this.scrollHorizontal)}% ${-50 * Number(this.scrollHorizontal)}%`
     });
 
-    this.$nextTick(() => {
-      if (!this.toggle) {
-        // this.scrollTo(this.getElement(this.list.getItem().index));
-        this.enable();
-      }
-    });
+    // this.$nextTick(() => {
+    if (!this.toggle) {
+      // this.scrollTo(this.getElement(this.list.getItem().index));
+      this.enable();
+    }
+    // });
   },
 
   destroyed () {
@@ -163,11 +154,6 @@ export default {
         // itemList.update(this.getDeepIndex());
       }
       return itemList;
-    },
-
-    detectScrollDirections () {
-      this.scroll.horizontal = true;
-      this.scroll.vertical = false;
     },
 
     getScrollDirection () {
@@ -305,12 +291,6 @@ div.container {
       direction: rtl;
     }
   }
-
-  /* &.scroll-vertical .wrapper {
-    position: absolute;
-    left: 50%;
-    transform: translate(-50%, 0);
-  } */
 }
 
 div.toggle {
